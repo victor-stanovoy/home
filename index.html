@@ -206,6 +206,41 @@ section{scroll-margin-top:4rem}
 .m2{font-weight:800}
 .dash{color:var(--accent);font-weight:300}
 
+/* ---------- spotlight (advert panels) ---------- */
+.spot{
+  display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:clamp(.75rem,1.5vw,1.25rem);
+  padding-block:clamp(3rem,7vw,6rem);
+}
+.ad{
+  display:flex;flex-direction:column;justify-content:space-between;gap:clamp(2.5rem,6vw,5rem);min-width:0;
+  min-height:clamp(26rem,42vw,36rem);padding:clamp(1.25rem,2.5vw,2.25rem);
+  border:1px solid var(--line);background:var(--surface);color:var(--ink);overflow:hidden;
+}
+.ad-pu{background:var(--accent);border-color:var(--accent);color:var(--bg)}
+.ad-top{display:flex;justify-content:space-between;align-items:center;gap:1rem;flex-wrap:wrap}
+.ad-top .tag{display:inline-flex;align-items:center;gap:.6rem}
+.ad-top .dot{background:currentColor}
+.ad-name{
+  margin:0;font-family:var(--f-display);font-weight:700;font-stretch:80%;
+  font-size:clamp(3rem,8.5vw,8rem);line-height:.88;letter-spacing:-.045em;overflow-wrap:anywhere;
+}
+.ad-name .tm{color:inherit}
+.ad-tag{
+  margin:1rem 0 0;font:300 clamp(1.4rem,2.6vw,2.4rem)/1.1 var(--f-display);letter-spacing:-.025em;text-wrap:balance;
+}
+.ad-copy{margin:1rem 0 0;max-width:38ch;opacity:.85;font-size:clamp(1rem,1.3vw,1.15rem)}
+.ad-cta{
+  align-self:flex-start;display:inline-flex;align-items:center;gap:.8rem;padding:1rem 1.3rem;
+  border:1px solid currentColor;color:inherit;text-decoration:none;
+  font:500 .8rem/1 var(--f-mono);text-transform:uppercase;letter-spacing:.1em;
+  transition:background .3s ease,color .3s ease,border-color .3s ease;
+}
+.ad-cta svg{width:1.1rem;height:1.1rem;stroke:currentColor;fill:none;stroke-width:1.8;transition:transform .3s ease}
+.ad-cta:hover svg{transform:translate(3px,-3px)}
+.ad-pu .ad-cta:hover{background:var(--bg);color:var(--accent);border-color:var(--bg)}
+.ad-sn .ad-cta:hover{background:var(--ink);color:var(--bg);border-color:var(--ink)}
+@media (max-width:760px){.spot{grid-template-columns:minmax(0,1fr)}.ad{min-height:22rem}}
+
 /* ---------- SparkNews ---------- */
 .wordmark{
   margin:0;font-family:var(--f-display);font-stretch:80%;
@@ -449,6 +484,30 @@ html.has-cursor,html.has-cursor *{cursor:none!important}
       </div>
     </div>
   </div>
+
+  <section class="spot" id="spotlight" aria-label="Spotlight">
+    <!-- EDIT HERE: these two panels are the advert. Change the words, or the link on each button. -->
+    <article class="ad ad-pu">
+      <div class="ad-top"><span class="tag"><i class="dot" aria-hidden="true"></i>In the works</span><span class="tag">New</span></div>
+      <div>
+        <h2 class="ad-name">Pocket Union<span class="tm">™</span></h2>
+        <p class="ad-tag">Excellence on the Go</p>
+        <p class="ad-copy">Thoughtfully made notebooks and travel accessories for life in motion, from the morning commute to journeys across the world.</p>
+      </div>
+      <a class="ad-cta" href="#contact" data-cursor="Hello">Get in touch
+        <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M7 17L17 7M8 7h9v9"/></svg></a>
+    </article>
+    <article class="ad ad-sn">
+      <div class="ad-top"><span class="tag">Student newspaper</span><span class="tag">Multiple schools</span></div>
+      <div>
+        <h2 class="ad-name">SparkNews<span class="tm">™</span></h2>
+        <p class="ad-tag">News from students, for students.</p>
+        <p class="ad-copy">A student newspaper that doesn’t stop at one school’s gates.</p>
+      </div>
+      <a class="ad-cta" href="https://sparknews.base44.app" data-cursor="Read">Read SparkNews™
+        <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M7 17L17 7M8 7h9v9"/></svg></a>
+    </article>
+  </section>
 
   <section class="sec" id="sparknews">
     <p class="label">SparkNews™</p>
@@ -807,17 +866,52 @@ html.has-cursor,html.has-cursor *{cursor:none!important}
     });
   });
 
-  /* ---- tab title: follows the section you are reading ---- */
-  /* EDIT HERE: BASE is the main title. TITLES maps each section id to the text shown before it. */
+  /* ---- tab title: playful, types itself out and follows the section you are reading ---- */
+  /* EDIT HERE: add, remove or rewrite any line. Each section picks one line at random every time you reach it. */
   var BASE='Victor Stanovoy';
-  var TITLES={top:'',about:'About',sparknews:'SparkNews™',projects:'Projects',index:'Index',pen:'Pen',contact:'Contact'};
-  function setTitle(id){
-    var t=TITLES[id];
-    document.title=t?t+' · '+BASE:BASE;
+  var TITLES={
+    top:['Victor Stanovoy ✍️','Hi, I’m Victor 👋','Victor Stanovoy · pen in hand'],
+    spotlight:['Now showing 🎬','Fresh off the press 🗞️','Meet the projects'],
+    about:['Who’s this guy? 🤔','A little about Victor','Ink-stained and proud'],
+    sparknews:['Stop the presses! 🗞️','Extra! Extra! SparkNews™','Read all about it'],
+    projects:['Pocket Union™ loading… 🎒','Things in the works 🛠️','Excellence on the Go'],
+    index:['The grand index 📚','Browsing, are we?','Choose your own adventure'],
+    pen:['Pen time ✒️','Go on, scribble something','Mind the ink'],
+    contact:['Say hello 👋','Slide into my inbox 📬','Let’s talk']
+  };
+  /* shown while the tab is in the background, one after another */
+  var AWAY=['Come back, the pen misses you ✍️','Your notebook is waiting 📓','Psst… still reading?','Left on read? 👀'];
+  var WELCOME='Welcome back! ✍️';
+  var curId='top', typeTimer=null, awayTimer=null, awayI=0;
+  function pick(a){return a[Math.floor(Math.random()*a.length)];}
+  function typeTitle(text){
+    clearInterval(typeTimer);
+    if(reduce){document.title=text;return;}
+    var chars=Array.from(text), i=0;
+    typeTimer=setInterval(function(){
+      i++;
+      document.title=chars.slice(0,i).join('')+(i<chars.length?'▍':'');
+      if(i>=chars.length) clearInterval(typeTimer);
+    },45);
   }
+  function setSection(id){
+    curId=id;
+    if(document.hidden) return;
+    typeTitle(pick(TITLES[id]||[BASE]));
+  }
+  document.addEventListener('visibilitychange',function(){
+    clearInterval(typeTimer);clearInterval(awayTimer);
+    if(document.hidden){
+      document.title=AWAY[awayI++%AWAY.length];
+      awayTimer=setInterval(function(){document.title=AWAY[awayI++%AWAY.length];},4000);
+    }else{
+      document.title=WELCOME;
+      setTimeout(function(){ if(!document.hidden) typeTitle(pick(TITLES[curId]||[BASE])); },1800);
+    }
+  });
   if('IntersectionObserver' in window){
     var tio=new IntersectionObserver(function(entries){
-      entries.forEach(function(en){ if(en.isIntersecting) setTitle(en.target.id); });
+      entries.forEach(function(en){ if(en.isIntersecting) setSection(en.target.id); });
     },{rootMargin:'-45% 0px -50% 0px'});
     Object.keys(TITLES).forEach(function(id){ var s=document.getElementById(id); if(s) tio.observe(s); });
   }
