@@ -6,6 +6,7 @@
 /* FAVICON
    To set your tab icon, add an image named favicon.png (or favicon.svg, .jpg, .jpeg, .webp) to the same folder as this file.
    The page finds it, crops it to a square, rounds the corners and uses it as the browser tab icon.
+   If the image has a transparent background, it is used as it is, with no rounding.
    If no image is there, it draws a "VS" monogram instead.
    RADIUS is the corner size as a fraction of the icon: 0 is square, 0.22 is soft, 0.5 is a circle. */
 (function(){
@@ -27,6 +28,11 @@
     draw(x);
     return c.toDataURL('image/png');
   }
+  function hasTransparency(x){
+    var d=x.getImageData(0,0,SIZE,SIZE).data, n=0;
+    for(var i=3;i<d.length;i+=4){ if(d[i]<250) n++; }
+    return n>SIZE*SIZE*0.005;
+  }
   function monogram(x){
     x.fillStyle='#2F3DF2'; x.fillRect(0,0,SIZE,SIZE);
     x.fillStyle='#ffffff'; x.font='700 128px "Helvetica Neue",Arial,sans-serif';
@@ -38,10 +44,12 @@
     img.onload=function(){
       var url;
       try{
-        url=render(function(x){
-          var w=img.naturalWidth||SIZE, h=img.naturalHeight||SIZE, s=Math.min(w,h);
-          x.drawImage(img,(w-s)/2,(h-s)/2,s,s,0,0,SIZE,SIZE);
-        });
+        var w=img.naturalWidth||SIZE, h=img.naturalHeight||SIZE, s=Math.min(w,h);
+        var crop=function(x){ x.drawImage(img,(w-s)/2,(h-s)/2,s,s,0,0,SIZE,SIZE); };
+        var c=document.createElement('canvas'); c.width=c.height=SIZE;
+        var x0=c.getContext('2d'); crop(x0);
+        /* a transparent image keeps its own shape, so only opaque images get rounded corners */
+        url=hasTransparency(x0) ? c.toDataURL('image/png') : render(crop);
       }catch(e){ url=img.src; }
       setIcon(url);
     };
@@ -798,6 +806,21 @@ html.has-cursor,html.has-cursor *{cursor:none!important}
       }else{pick();}
     });
   });
+
+  /* ---- tab title: follows the section you are reading ---- */
+  /* EDIT HERE: BASE is the main title. TITLES maps each section id to the text shown before it. */
+  var BASE='Victor Stanovoy';
+  var TITLES={top:'',about:'About',sparknews:'SparkNews™',projects:'Projects',index:'Index',pen:'Pen',contact:'Contact'};
+  function setTitle(id){
+    var t=TITLES[id];
+    document.title=t?t+' · '+BASE:BASE;
+  }
+  if('IntersectionObserver' in window){
+    var tio=new IntersectionObserver(function(entries){
+      entries.forEach(function(en){ if(en.isIntersecting) setTitle(en.target.id); });
+    },{rootMargin:'-45% 0px -50% 0px'});
+    Object.keys(TITLES).forEach(function(id){ var s=document.getElementById(id); if(s) tio.observe(s); });
+  }
 
   /* ---- boot ---- */
   size();measure();
