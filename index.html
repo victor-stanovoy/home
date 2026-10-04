@@ -1,8 +1,56 @@
-<!doctype html><html><head><meta charset=utf8><meta name=viewport content="width=device-width,initial-scale=1,viewport-fit=cover"><style>:root{color-scheme:light;box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}html{scroll-padding-top:env(safe-area-inset-top,0px)}body{margin:0;padding:0;font:14px -apple-system,BlinkMacSystemFont,sans-serif;background:#faf9f5;color:#141413}img{max-width:100%}[hidden]:not([hidden=until-found i]){display:none!important}</style></head><body>
 <title>Victor Stanovoy</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wdth,wght@12..96,75..100,200..800&family=IBM+Plex+Mono:wght@400;500&family=Instrument+Sans:wght@400;500;600&family=Reenie+Beanie&display=swap">
+<script>
+/* FAVICON
+   To set your tab icon, add an image named favicon.png (or favicon.svg, .jpg, .jpeg, .webp) to the same folder as this file.
+   The page finds it, crops it to a square, rounds the corners and uses it as the browser tab icon.
+   If no image is there, it draws a "VS" monogram instead.
+   RADIUS is the corner size as a fraction of the icon: 0 is square, 0.22 is soft, 0.5 is a circle. */
+(function(){
+  var NAMES=['favicon.png','favicon.svg','favicon.jpg','favicon.jpeg','favicon.webp'];
+  var SIZE=256, RADIUS=0.22;
+  function setIcon(href){
+    var old=document.querySelectorAll('link[rel~="icon"]');
+    for(var i=0;i<old.length;i++) old[i].parentNode.removeChild(old[i]);
+    var l=document.createElement('link'); l.rel='icon'; l.type='image/png'; l.href=href;
+    document.head.appendChild(l);
+  }
+  function render(draw){
+    var c=document.createElement('canvas'); c.width=c.height=SIZE;
+    var x=c.getContext('2d'), r=SIZE*RADIUS;
+    x.beginPath(); x.moveTo(r,0);
+    x.arcTo(SIZE,0,SIZE,SIZE,r); x.arcTo(SIZE,SIZE,0,SIZE,r);
+    x.arcTo(0,SIZE,0,0,r); x.arcTo(0,0,SIZE,0,r);
+    x.closePath(); x.clip();
+    draw(x);
+    return c.toDataURL('image/png');
+  }
+  function monogram(x){
+    x.fillStyle='#2F3DF2'; x.fillRect(0,0,SIZE,SIZE);
+    x.fillStyle='#ffffff'; x.font='700 128px "Helvetica Neue",Arial,sans-serif';
+    x.textAlign='center'; x.textBaseline='middle'; x.fillText('VS',SIZE/2,SIZE/2+8);
+  }
+  function tryName(i){
+    if(i>=NAMES.length){ try{ setIcon(render(monogram)); }catch(e){} return; }
+    var img=new Image();
+    img.onload=function(){
+      var url;
+      try{
+        url=render(function(x){
+          var w=img.naturalWidth||SIZE, h=img.naturalHeight||SIZE, s=Math.min(w,h);
+          x.drawImage(img,(w-s)/2,(h-s)/2,s,s,0,0,SIZE,SIZE);
+        });
+      }catch(e){ url=img.src; }
+      setIcon(url);
+    };
+    img.onerror=function(){ tryName(i+1); };
+    img.src=NAMES[i];
+  }
+  tryName(0);
+})();
+</script>
 <style>
 /* Layout concept: one oversized typographic spread. The name is the hero, big type drifts at different depths on scroll,
    a 12-column grid carries the index, and a writing pad lets visitors use the pen. */
@@ -759,4 +807,3 @@ html.has-cursor,html.has-cursor *{cursor:none!important}
   requestAnimationFrame(frame);
 })();
 </script>
-</body></html>
