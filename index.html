@@ -305,17 +305,36 @@ section{scroll-margin-top:4rem}
   background:var(--cover);color:var(--bg);
   box-shadow:6px 6px 0 -1px var(--surface),7px 7px 0 0 var(--line),0 40px 60px -28px color-mix(in srgb,var(--ink) 55%,transparent);
   transform:perspective(900px) rotateY(var(--ry,-10deg)) rotateX(var(--rx,4deg)) rotate(-3deg);
-  transition:transform .3s ease,background-color .7s ease;
+  transition:transform .3s ease,background-color .7s ease,width .6s ease,aspect-ratio .6s ease,padding .6s ease;
 }
-.nb[data-ed="1"]{--cover:var(--e2)}
-.nb[data-ed="2"]{--cover:var(--e3)}
+.nb[data-ed="1"]{--cover:var(--e2);padding-bottom:calc(24% + 1rem)}
+.nb[data-ed="2"]{--cover:var(--e3);width:min(14.5rem,64%);aspect-ratio:3/4.4}
 .nb::before{content:"";position:absolute;top:0;bottom:0;left:0;width:7%;border-radius:.9rem 0 0 .9rem;background:rgba(0,0,0,.22)}
 .nb::after{content:"";position:absolute;top:-1px;bottom:-1px;right:13%;width:.65rem;background:rgba(0,0,0,.4)}
 .nb > *{position:relative}
 .nb-k{font:500 .7rem/1 var(--f-mono);text-transform:uppercase;letter-spacing:.14em}
 .nb-name{
-  display:block;font:700 clamp(2.2rem,5vw,3.4rem)/.9 var(--f-display);font-stretch:80%;letter-spacing:-.04em;
+  display:block;font:700 clamp(2rem,4.4vw,3rem)/.92 var(--f-display);font-stretch:80%;letter-spacing:-.04em;
 }
+.nb-pocket{
+  position:absolute;left:2.3rem;right:1.4rem;bottom:0;height:24%;border-radius:.7rem .7rem 0 0;
+  background:rgba(0,0,0,.2);opacity:0;transition:opacity .5s ease;
+}
+.nb-pocket i{position:absolute;left:18%;top:-.9rem;width:34%;height:1.6rem;border-radius:.25rem;background:var(--bg);opacity:.9;transform:rotate(-4deg)}
+.nb[data-ed="1"] .nb-pocket{opacity:1}
+.ed-line{margin:0 0 .6rem;font:500 clamp(1.3rem,2.2vw,1.8rem)/1.15 var(--f-display);letter-spacing:-.02em;color:var(--accent)}
+
+/* easter egg: ink mode */
+.ink-cv{position:fixed;inset:0;width:100%;height:100%;pointer-events:none;z-index:95;display:none}
+html.ink .ink-cv{display:block}
+.ink-banner{
+  position:fixed;left:50%;bottom:calc(env(safe-area-inset-bottom,0px) + 2rem);z-index:96;
+  max-width:calc(100vw - 32px);padding:.5rem 1.4rem;text-align:center;pointer-events:none;
+  border:1px solid var(--line);background:var(--surface);color:var(--accent);
+  font:400 clamp(2rem,6vw,3.4rem)/1 var(--f-hand);
+  transform:translateX(-50%) rotate(-2deg);opacity:0;transition:opacity .4s ease;
+}
+.ink-banner.show{opacity:1}
 .nb-sub{display:block;margin-top:.6rem;font:300 1rem/1.1 var(--f-display);letter-spacing:-.01em;opacity:.9}
 
 .tabs{display:flex;gap:.5rem;flex-wrap:wrap;margin-bottom:1.75rem}
@@ -562,6 +581,8 @@ html.has-cursor,html.has-cursor *{cursor:none!important}
 <div class="cur" id="curRing" aria-hidden="true"><div class="cur-ring" id="curBox"><span id="curLabel"></span></div></div>
 
 <div class="tip" id="tip" aria-hidden="true"></div>
+<canvas class="ink-cv" id="inkCv" aria-hidden="true"></canvas>
+<div class="ink-banner" id="inkBanner" role="status"></div>
 
 <header class="bar">
   <a class="mark" href="#top"><span class="full">Victor Stanovoy</span><span class="short">VS</span></a>
@@ -673,24 +694,26 @@ html.has-cursor,html.has-cursor *{cursor:none!important}
       <div class="pu-visual" id="puVisual">
         <div class="nb" id="nb" data-ed="0" role="img" aria-label="Pocket Union notebook cover">
           <span class="nb-k">Pocket Union™</span>
-          <div><span class="nb-name" id="nbName">Transit</span><span class="nb-sub">Excellence on the Go</span></div>
+          <i class="nb-pocket" aria-hidden="true"><i></i></i>
+          <div><span class="nb-name" id="nbName">The Standard</span><span class="nb-sub">Excellence on the Go</span></div>
         </div>
       </div>
       <div class="pu-info">
         <div class="tabs" role="tablist" aria-label="Notebook editions">
-          <button class="tab" role="tab" type="button" id="tab0" aria-controls="edPanel" aria-selected="true" data-cursor="Show">Transit</button>
-          <button class="tab" role="tab" type="button" id="tab1" aria-controls="edPanel" aria-selected="false" tabindex="-1" data-cursor="Show">Café</button>
-          <button class="tab" role="tab" type="button" id="tab2" aria-controls="edPanel" aria-selected="false" tabindex="-1" data-cursor="Show">Departure</button>
+          <button class="tab" role="tab" type="button" id="tab0" aria-controls="edPanel" aria-selected="true" data-cursor="Show">The Standard</button>
+          <button class="tab" role="tab" type="button" id="tab1" aria-controls="edPanel" aria-selected="false" tabindex="-1" data-cursor="Show">The Meridian</button>
+          <button class="tab" role="tab" type="button" id="tab2" aria-controls="edPanel" aria-selected="false" tabindex="-1" data-cursor="Show">The Commuter</button>
         </div>
         <div id="edPanel" role="tabpanel" aria-labelledby="tab0">
-          <h3 class="ed-name" id="edName">Transit</h3>
-          <p class="ed-desc" id="edDesc">A slim pocket notebook with a soft cover.</p>
+          <h3 class="ed-name" id="edName">The Standard</h3>
+          <p class="ed-line" id="edLine">The one you reach for every day.</p>
+          <p class="ed-desc" id="edDesc">An A5 notebook that lies flat on the table, so your hand never fights the spine. Room for long, unhurried entries and the thinking that comes with them.</p>
           <dl class="ed-spec">
-            <div><dt>Format</dt><dd id="edFormat">Pocket size, soft cover</dd></div>
-            <div><dt>Built for</dt><dd id="edFor">The subway and the daily commute</dd></div>
+            <div><dt>Format</dt><dd id="edFormat">A5, lay-flat binding</dd></div>
+            <div><dt>Built for</dt><dd id="edFor">Longer sessions at a café table</dd></div>
           </dl>
         </div>
-        <p class="concept">Concept editions. Details may change as Pocket Union™ takes shape.</p>
+        <p class="concept">Three editions, already developed.</p>
       </div>
     </div>
 
@@ -1150,11 +1173,17 @@ html.has-cursor,html.has-cursor *{cursor:none!important}
   })(0);
 
   /* ---- Pocket Union editions ---- */
-  /* EDIT HERE: the three notebook editions. Change the words, or add a fourth with its own tab and a data-ed colour. */
+  /* EDIT HERE: the three notebook editions. To rename one, change its name here AND its tab label in the HTML above. */
   var EDITIONS=[
-    {name:'Transit',   desc:'A slim pocket notebook with a soft cover.',     format:'Pocket size, soft cover',          built:'The subway and the daily commute'},
-    {name:'Café',      desc:'An A5 notebook that lies flat on the table.',   format:'A5, lay-flat binding',             built:'Longer sessions at a café table'},
-    {name:'Departure', desc:'A travel journal with a pocket for tickets.',   format:'Travel journal, ticket pocket',    built:'Planes, trains and trips'}
+    {name:'The Standard', line:'The one you reach for every day.',
+     desc:'An A5 notebook that lies flat on the table, so your hand never fights the spine. Room for long, unhurried entries and the thinking that comes with them.',
+     format:'A5, lay-flat binding', built:'Longer sessions at a café table'},
+    {name:'The Meridian', line:'A line through every journey.',
+     desc:'A travel journal for the long way round. Keep the boarding pass, the receipt and the thought you had at thirty thousand feet in one place.',
+     format:'Travel journal, ticket pocket', built:'Planes, trains and trips'},
+    {name:'The Commuter', line:'Small enough for the in-between.',
+     desc:'A slim pocket notebook with a soft cover that bends into a jacket pocket. Made for the few quiet minutes between one stop and the next.',
+     format:'Pocket size, soft cover', built:'The subway and the daily commute'}
   ];
   var nb=$('#nb'), edTabs=$$('.tab'), edIdx=0, edAuto=null;
   function showEd(i){
@@ -1162,6 +1191,7 @@ html.has-cursor,html.has-cursor *{cursor:none!important}
     nb.setAttribute('data-ed',i);
     $('#nbName').textContent=e.name;
     $('#edName').textContent=e.name;
+    $('#edLine').textContent=e.line;
     $('#edDesc').textContent=e.desc;
     $('#edFormat').textContent=e.format;
     $('#edFor').textContent=e.built;
@@ -1211,6 +1241,72 @@ html.has-cursor,html.has-cursor *{cursor:none!important}
       c.style.setProperty('--my',(e.clientY-r.top)+'px');
     });
   });
+
+  /* ---- easter egg: type "ink" anywhere (or double-tap the notebook) and the cursor becomes a pen ---- */
+  var inkCv=$('#inkCv'), inkCtx=inkCv.getContext('2d'), inkBanner=$('#inkBanner');
+  var INK_LIFE=2200, inkOn=false, inkPts=[], inkRaf=0, inkTimer=0, inkCol='#2F3DF2', inkW=0, inkH=0, inkKeys='';
+  function inkSize(){
+    var d=Math.min(window.devicePixelRatio||1,2);
+    inkW=innerWidth; inkH=innerHeight;
+    inkCv.width=Math.round(inkW*d); inkCv.height=Math.round(inkH*d);
+    inkCtx.setTransform(d,0,0,d,0,0);
+  }
+  function inkSay(text){
+    inkBanner.textContent=text; inkBanner.classList.add('show');
+    clearTimeout(inkTimer); inkTimer=setTimeout(function(){inkBanner.classList.remove('show');},3800);
+  }
+  function inkAdd(e){
+    if(!inkOn) return;
+    var now=performance.now(), p={x:e.clientX,y:e.clientY,t:now,w:3}, l=inkPts[inkPts.length-1];
+    if(l){
+      var dx=p.x-l.x, dy=p.y-l.y, d=Math.sqrt(dx*dx+dy*dy);
+      if(d<2) return;
+      var sp=d/Math.max(1,now-l.t);
+      p.w=l.w*0.7+Math.max(1.2,Math.min(5,5-sp*1.2))*0.3;
+    }
+    inkPts.push(p);
+  }
+  function inkFrame(now){
+    if(!inkOn&&!inkPts.length){inkRaf=0;inkCtx.clearRect(0,0,inkW,inkH);return;}
+    inkCtx.clearRect(0,0,inkW,inkH);
+    while(inkPts.length&&now-inkPts[0].t>INK_LIFE) inkPts.shift();
+    inkCtx.lineCap='round'; inkCtx.lineJoin='round'; inkCtx.strokeStyle=inkCol;
+    for(var i=1;i<inkPts.length;i++){
+      var a=inkPts[i-1], b=inkPts[i];
+      if(b.t-a.t>120) continue;
+      inkCtx.globalAlpha=Math.max(0,1-(now-b.t)/INK_LIFE);
+      inkCtx.lineWidth=b.w;
+      inkCtx.beginPath(); inkCtx.moveTo(a.x,a.y); inkCtx.lineTo(b.x,b.y); inkCtx.stroke();
+    }
+    inkCtx.globalAlpha=1;
+    inkRaf=requestAnimationFrame(inkFrame);
+  }
+  function setInk(on){
+    if(on===inkOn) return;
+    inkOn=on; root.classList.toggle('ink',on);
+    if(on){
+      inkCol=getComputedStyle(root).getPropertyValue('--accent').trim()||'#2F3DF2';
+      inkSize(); inkSay('You found the ink. Write anywhere ✒️');
+      if(!inkRaf) inkRaf=requestAnimationFrame(inkFrame);
+    }else{
+      inkPts=[]; inkSay('Ink’s dry. Until next time.');
+    }
+  }
+  document.addEventListener('pointermove',inkAdd,{passive:true});
+  addEventListener('resize',function(){if(inkOn) inkSize();});
+  document.addEventListener('keydown',function(e){
+    if(e.key==='Escape'){setInk(false);return;}
+    var t=e.target; if(t&&(t.isContentEditable||/^(INPUT|TEXTAREA|SELECT)$/.test(t.tagName))) return;
+    if(e.key.length!==1||e.metaKey||e.ctrlKey||e.altKey) return;
+    inkKeys=(inkKeys+e.key.toLowerCase()).slice(-3);
+    if(inkKeys==='ink'){inkKeys='';setInk(!inkOn);}
+  });
+  var lastTap=0;
+  nb.addEventListener('pointerup',function(){
+    var n=Date.now();
+    if(n-lastTap<380){lastTap=0;setInk(!inkOn);} else lastTap=n;
+  });
+  try{console.log('%cPsst… type “ink” anywhere on the page.','font:italic 16px Georgia,serif;color:#2F3DF2');}catch(e){}
 
   /* ---- boot ---- */
   size();measure();
