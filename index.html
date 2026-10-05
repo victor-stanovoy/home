@@ -1107,25 +1107,34 @@ html.has-cursor,html.has-cursor *{cursor:none!important}
     });
   });
 
-  /* ---- tab title: playful, types itself out and follows the section you are reading ---- */
+  /* ---- tab title: playful and follows the section you are reading; scrolls like a news ticker while you are away ---- */
   /* EDIT HERE: add, remove or rewrite any line. Each section picks one line at random every time you reach it. */
   var BASE='Victor Stanovoy';
   var TITLES={
-    top:['Victor Stanovoy ✍️','Hi, I’m Victor 👋','Victor Stanovoy · pen in hand'],
+    top:['Victor Stanovoy','Hi, I’m Victor 👋','Victor Stanovoy · Founder & CEO'],
     spotlight:['Now showing 🎬','Fresh off the press 🗞️','Meet the projects'],
-    about:['Who’s this guy? 🤔','A little about Victor','Ink-stained and proud'],
+    about:['Who’s this guy? 🤔','A little about Victor','The person behind the projects'],
     sparknews:['Stop the presses! 🗞️','Extra! Extra! SparkNews™','Read all about it'],
     pocketunion:['Pocket Union™ · Excellence on the Go 🎒','Made for the in-between','Connect. Reflect. Excel.'],
     now:['Right now ⚡','What’s cooking 🍳','Live from the desk'],
     projects:['Pocket Union™ loading… 🎒','Things in the works 🛠️','Excellence on the Go'],
-    index:['The grand index 📚','Browsing, are we?','Choose your own adventure'],
-    pen:['Pen time ✒️','Go on, scribble something','Mind the ink'],
-    contact:['Say hello 👋','Slide into my inbox 📬','Let’s talk']
+    index:['The grand tour 🗺️','Browsing, are we?','Choose your own adventure'],
+    pen:['Doodle break 🎨','Go on, make a mark','Free canvas'],
+    contact:['Say hello 👋','Let’s talk 💬','Slide into my inbox 📬']
   };
-  /* shown while the tab is in the background, one after another */
-  var AWAY=['Come back, the pen misses you ✍️','Your notebook is waiting 📓','Psst… still reading?','Left on read? 👀'];
-  var WELCOME='Welcome back! ✍️';
-  var curId='top', typeTimer=null, awayTimer=null, awayI=0;
+  /* the ticker: these headlines scroll across the tab title while this tab is in the background.
+     TICKER_WIDTH is how many characters show at once, TICKER_MS is how fast it moves (lower is faster).
+     Browsers slow background timers down, so on some browsers the ticker moves in slower steps. */
+  var TICKER=[
+    'SparkNews™ · student news across multiple schools',
+    'Pocket Union™ · Excellence on the Go',
+    'Connect. Reflect. Excel.',
+    'Victor Stanovoy · Founder & CEO',
+    'Come back soon'
+  ];
+  var TICKER_SEP='   ✦   ', TICKER_WIDTH=34, TICKER_MS=300;
+  var WELCOME='Welcome back! 👋';
+  var curId='top', typeTimer=null, tickTimer=null;
   function pick(a){return a[Math.floor(Math.random()*a.length)];}
   function typeTitle(text){
     clearInterval(typeTimer);
@@ -1142,12 +1151,24 @@ html.has-cursor,html.has-cursor *{cursor:none!important}
     if(document.hidden) return;
     typeTitle(pick(TITLES[id]||[BASE]));
   }
+  function stopTicker(){clearInterval(tickTimer);tickTimer=null;}
+  function startTicker(){
+    stopTicker();
+    if(reduce){document.title='Come back soon · '+BASE;return;}
+    var chars=Array.from(TICKER.join(TICKER_SEP)+TICKER_SEP), n=chars.length, pos=0;
+    function step(){
+      var out='';
+      for(var i=0;i<TICKER_WIDTH;i++) out+=chars[(pos+i)%n];
+      document.title=out; pos=(pos+1)%n;
+    }
+    step(); tickTimer=setInterval(step,TICKER_MS);
+  }
   document.addEventListener('visibilitychange',function(){
-    clearInterval(typeTimer);clearInterval(awayTimer);
+    clearInterval(typeTimer);
     if(document.hidden){
-      document.title=AWAY[awayI++%AWAY.length];
-      awayTimer=setInterval(function(){document.title=AWAY[awayI++%AWAY.length];},4000);
+      startTicker();
     }else{
+      stopTicker();
       document.title=WELCOME;
       setTimeout(function(){ if(!document.hidden) typeTitle(pick(TITLES[curId]||[BASE])); },1800);
     }
