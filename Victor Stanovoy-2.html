@@ -1,0 +1,1775 @@
+<!doctype html><html><head><meta charset=utf8><meta name=viewport content="width=device-width,initial-scale=1,viewport-fit=cover"><style>:root{color-scheme:light;box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}html{scroll-padding-top:env(safe-area-inset-top,0px)}body{margin:0;padding:0;font:14px -apple-system,BlinkMacSystemFont,sans-serif;background:#faf9f5;color:#141413}img{max-width:100%}[hidden]:not([hidden=until-found i]){display:none!important}</style></head><body>
+<title>Victor Stanovoy</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wdth,wght@12..96,75..100,200..800&family=IBM+Plex+Mono:wght@400;500&family=Instrument+Sans:wght@400;500;600&family=Reenie+Beanie&display=swap">
+<script>
+/* FAVICON
+   To set your tab icon, add an image named favicon.png (or favicon.svg, .jpg, .jpeg, .webp) to the same folder as this file.
+   The page finds it, crops it to a square, rounds the corners and uses it as the browser tab icon.
+   If the image has a transparent background, it is used as it is, with no rounding.
+   If no image is there, it draws a "VS" monogram instead.
+   RADIUS is the corner size as a fraction of the icon: 0 is square, 0.22 is soft, 0.5 is a circle. */
+(function(){
+  /* apply a saved light/dark choice straight away, so the page never flashes the wrong theme */
+  try{var savedTheme=localStorage.getItem('theme-pref'); if(savedTheme==='light'||savedTheme==='dark') document.documentElement.setAttribute('data-theme',savedTheme);}catch(e){}
+  var NAMES=['favicon.png','favicon.svg','favicon.jpg','favicon.jpeg','favicon.webp'];
+  var SIZE=256, RADIUS=0.22;
+  function setIcon(href){
+    var old=document.querySelectorAll('link[rel~="icon"]');
+    for(var i=0;i<old.length;i++) old[i].parentNode.removeChild(old[i]);
+    var l=document.createElement('link'); l.rel='icon'; l.type='image/png'; l.href=href;
+    document.head.appendChild(l);
+  }
+  function render(draw){
+    var c=document.createElement('canvas'); c.width=c.height=SIZE;
+    var x=c.getContext('2d'), r=SIZE*RADIUS;
+    x.beginPath(); x.moveTo(r,0);
+    x.arcTo(SIZE,0,SIZE,SIZE,r); x.arcTo(SIZE,SIZE,0,SIZE,r);
+    x.arcTo(0,SIZE,0,0,r); x.arcTo(0,0,SIZE,0,r);
+    x.closePath(); x.clip();
+    draw(x);
+    return c.toDataURL('image/png');
+  }
+  function hasTransparency(x){
+    var d=x.getImageData(0,0,SIZE,SIZE).data, n=0;
+    for(var i=3;i<d.length;i+=4){ if(d[i]<250) n++; }
+    return n>SIZE*SIZE*0.005;
+  }
+  function monogram(x){
+    x.fillStyle='#2F3DF2'; x.fillRect(0,0,SIZE,SIZE);
+    x.fillStyle='#ffffff'; x.font='700 128px "Helvetica Neue",Arial,sans-serif';
+    x.textAlign='center'; x.textBaseline='middle'; x.fillText('VS',SIZE/2,SIZE/2+8);
+  }
+  function tryName(i){
+    if(i>=NAMES.length){ try{ setIcon(render(monogram)); }catch(e){} return; }
+    var img=new Image();
+    img.onload=function(){
+      var url;
+      try{
+        var w=img.naturalWidth||SIZE, h=img.naturalHeight||SIZE, s=Math.min(w,h);
+        var crop=function(x){ x.drawImage(img,(w-s)/2,(h-s)/2,s,s,0,0,SIZE,SIZE); };
+        var c=document.createElement('canvas'); c.width=c.height=SIZE;
+        var x0=c.getContext('2d'); crop(x0);
+        /* a transparent image keeps its own shape, so only opaque images get rounded corners */
+        url=hasTransparency(x0) ? c.toDataURL('image/png') : render(crop);
+      }catch(e){ url=img.src; }
+      setIcon(url);
+    };
+    img.onerror=function(){ tryName(i+1); };
+    img.src=NAMES[i];
+  }
+  tryName(0);
+})();
+</script>
+<style>
+/* Layout concept: one oversized typographic spread. The name is the hero, big type drifts at different depths on scroll,
+   a 12-column grid carries the index, and a writing pad lets visitors use the pen. */
+:root{
+  --bg:#EDEFF4;
+  --surface:#F6F7FA;
+  --ink:#0C1633;
+  --muted:#5B6482;
+  --line:#C8CDDC;
+  --accent:#2F3DF2;
+  --e2:#0F7A85;
+  --e3:#6B3DF0;
+  --f-display:'Bricolage Grotesque','Helvetica Neue',Arial,sans-serif;
+  --f-body:'Instrument Sans','Helvetica Neue',Arial,sans-serif;
+  --f-mono:'IBM Plex Mono',ui-monospace,Menlo,Consolas,monospace;
+  --f-hand:'Reenie Beanie','Bradley Hand','Segoe Script',cursive;
+  --gutter:clamp(16px,4vw,56px);
+}
+@media (prefers-color-scheme:dark){
+  :root:not([data-theme="light"]){
+    --bg:#0A0E1F;--surface:#111733;--ink:#E9ECF8;--muted:#98A0C0;--line:#2A3257;--accent:#8C9BFF;--e2:#6FD3DA;--e3:#B9A2FF;color-scheme:dark;
+  }
+}
+:root[data-theme="dark"]{
+  --bg:#0A0E1F;--surface:#111733;--ink:#E9ECF8;--muted:#98A0C0;--line:#2A3257;--accent:#8C9BFF;--e2:#6FD3DA;--e3:#B9A2FF;color-scheme:dark;
+}
+
+*,*::before,*::after{box-sizing:border-box}
+html{scroll-behavior:smooth}
+body{
+  padding-inline:var(--gutter);
+  background:var(--bg);color:var(--ink);
+  font:400 clamp(1rem,.35vw + .93rem,1.125rem)/1.55 var(--f-body);
+  overflow-x:clip;-webkit-font-smoothing:antialiased;
+}
+::selection{background:var(--accent);color:var(--bg)}
+a{color:inherit}
+:focus-visible{outline:2px solid var(--accent);outline-offset:3px}
+section{scroll-margin-top:4rem}
+
+/* ---------- header ---------- */
+.bar{
+  position:fixed;top:0;left:0;right:0;z-index:50;
+  display:flex;justify-content:space-between;align-items:center;gap:1rem;
+  padding:calc(env(safe-area-inset-top,0px) + 14px) var(--gutter) 14px;
+  background:color-mix(in srgb,var(--bg) 82%,transparent);
+  -webkit-backdrop-filter:blur(10px);backdrop-filter:blur(10px);
+  border-bottom:1px solid var(--line);
+}
+.bar a{
+  position:relative;padding:.4rem 0;text-decoration:none;color:var(--ink);
+  font:500 .75rem/1 var(--f-mono);text-transform:uppercase;letter-spacing:.1em;
+}
+.bar nav{display:flex;gap:clamp(.9rem,2.5vw,2rem)}
+.bar nav a::after{
+  content:"";position:absolute;left:0;right:0;bottom:0;height:1px;background:var(--accent);
+  transform:scaleX(0);transform-origin:left;transition:transform .3s ease;
+}
+.bar nav a:hover::after{transform:scaleX(1)}
+.bar::after{
+  content:"";position:absolute;left:0;right:0;bottom:-1px;height:2px;background:var(--accent);
+  transform:scaleX(var(--p,0));transform-origin:left;pointer-events:none;
+}
+.bar-r{display:flex;align-items:center;gap:clamp(.9rem,2.5vw,2rem)}
+.theme{
+  display:grid;place-items:center;width:2.1rem;height:2.1rem;padding:0;border:1px solid var(--line);border-radius:50%;
+  background:transparent;color:var(--ink);transition:border-color .25s ease,background .25s ease,color .25s ease;
+}
+.theme:hover{border-color:var(--ink);background:var(--ink);color:var(--bg)}
+.theme svg{width:1.05rem;height:1.05rem;stroke:currentColor;fill:none;stroke-width:1.6;stroke-linecap:round;stroke-linejoin:round}
+.bar nav a.on::after{transform:scaleX(1)}
+@media (max-width:900px){.bar nav{display:none}}
+.menu-btn{
+  display:inline-flex;align-items:center;gap:.6rem;padding:.6rem .95rem;border:1px solid var(--line);border-radius:999px;
+  background:transparent;color:var(--ink);font:500 .75rem/1 var(--f-mono);text-transform:uppercase;letter-spacing:.1em;
+  transition:border-color .25s ease,background .25s ease,color .25s ease;
+}
+.menu-btn:hover{border-color:var(--ink);background:var(--ink);color:var(--bg)}
+.menu-btn i{display:block;width:.9rem;height:.42rem;border-block:1.5px solid currentColor}
+
+/* full-screen menu */
+.menu{
+  position:fixed;inset:0;z-index:70;overflow-y:auto;background:var(--bg);color:var(--ink);
+  padding:calc(env(safe-area-inset-top,0px) + 14px) var(--gutter) calc(env(safe-area-inset-bottom,0px) + 2rem);
+  animation:menuIn .35s ease;
+}
+@keyframes menuIn{from{opacity:0;transform:translateY(-14px)}}
+.menu-top{display:flex;justify-content:space-between;align-items:center;gap:1rem;margin-bottom:clamp(1.5rem,4vw,3rem)}
+.menu-top span{font:500 .75rem/1 var(--f-mono);text-transform:uppercase;letter-spacing:.14em;color:var(--muted)}
+.menu-list{list-style:none;margin:0;padding:0;display:grid;grid-template-columns:repeat(2,minmax(0,1fr));column-gap:clamp(1rem,4vw,4rem)}
+.menu-list a{
+  display:flex;justify-content:space-between;align-items:baseline;gap:1rem;
+  padding:clamp(.8rem,2vw,1.4rem) 0;border-top:1px solid var(--line);color:var(--ink);text-decoration:none;
+  transition:color .25s ease,padding .3s ease;
+}
+.menu-list b{font:700 clamp(2rem,6vw,5rem)/.95 var(--f-display);font-stretch:80%;letter-spacing:-.04em;min-width:0;overflow-wrap:anywhere}
+.menu-list span{flex:none;max-width:40%;text-align:right;font:500 .7rem/1.4 var(--f-mono);text-transform:uppercase;letter-spacing:.12em;color:var(--muted)}
+.menu-list a:hover{color:var(--accent);padding-left:.75rem}
+.menu-list a[aria-current="true"]{color:var(--accent)}
+.menu-list a[aria-current="true"] b::before{content:"";display:inline-block;width:.35em;height:.35em;margin-right:.25em;border-radius:50%;background:var(--accent);vertical-align:.18em}
+.menu-list li{animation:menuIn .45s ease backwards}
+.menu-list li:nth-child(2){animation-delay:.04s}.menu-list li:nth-child(3){animation-delay:.08s}.menu-list li:nth-child(4){animation-delay:.12s}
+.menu-list li:nth-child(5){animation-delay:.16s}.menu-list li:nth-child(6){animation-delay:.2s}.menu-list li:nth-child(7){animation-delay:.24s}
+.menu-foot{margin:2rem 0 0;font:500 .75rem/1.5 var(--f-mono);text-transform:uppercase;letter-spacing:.12em;color:var(--muted);overflow-wrap:anywhere}
+@media (max-width:760px){.menu-list{grid-template-columns:minmax(0,1fr)}}
+@media (max-width:520px){.menu-list span{display:none}}
+
+/* handwriting gallery and viewer */
+.hg{list-style:none;margin:2.5rem 0 0;padding:0;display:grid;grid-template-columns:repeat(auto-fill,minmax(min(100%,15rem),1fr));gap:clamp(.75rem,1.5vw,1.25rem)}
+.hg li{min-width:0}
+.hg button{
+  display:block;width:100%;aspect-ratio:3/4;padding:0;overflow:hidden;border:1px solid var(--line);background:var(--surface);
+  transition:transform .35s ease,border-color .25s ease;
+}
+.hg li:nth-child(odd) button{transform:rotate(-.7deg)}
+.hg li:nth-child(even) button{transform:rotate(.6deg)}
+.hg button:hover{transform:rotate(0) translateY(-4px);border-color:var(--ink)}
+.hg img{display:block;width:100%;height:100%;object-fit:cover;transition:transform .6s ease}
+.hg button:hover img{transform:scale(1.04)}
+.lb{
+  position:fixed;inset:0;z-index:75;display:grid;grid-template-columns:auto minmax(0,1fr) auto;align-items:center;gap:1rem;
+  padding:calc(env(safe-area-inset-top,0px) + 3.5rem) var(--gutter) calc(env(safe-area-inset-bottom,0px) + 1.5rem);
+  background:color-mix(in srgb,var(--bg) 94%,transparent);-webkit-backdrop-filter:blur(8px);backdrop-filter:blur(8px);
+}
+.lb figure{margin:0;min-width:0;display:grid;justify-items:center;gap:1rem}
+.lb img{max-width:100%;max-height:calc(100vh - 11rem);object-fit:contain;border:1px solid var(--line);background:var(--surface)}
+.lb figcaption{font:500 .75rem/1.4 var(--f-mono);text-transform:uppercase;letter-spacing:.12em;color:var(--muted);text-align:center}
+.lb-x{position:absolute;top:calc(env(safe-area-inset-top,0px) + 14px);right:var(--gutter)}
+.lb-n{
+  display:grid;place-items:center;width:2.6rem;height:2.6rem;padding:0;border:1px solid var(--line);border-radius:50%;
+  background:transparent;color:var(--ink);transition:background .25s ease,color .25s ease,border-color .25s ease;
+}
+.lb-n:hover{background:var(--ink);color:var(--bg);border-color:var(--ink)}
+.lb-n svg{width:1.1rem;height:1.1rem;stroke:currentColor;fill:none;stroke-width:1.8;stroke-linecap:round;stroke-linejoin:round}
+@media (max-width:560px){.lb{grid-template-columns:minmax(0,1fr)}.lb-n{display:none}}
+.mark .short{display:none}
+@media (max-width:520px){.mark .full{display:none}.mark .short{display:inline}}
+
+/* ---------- hero ---------- */
+.hero{padding-block:calc(5.5rem + 2vw) clamp(3rem,6vw,5rem)}
+.top-meta{
+  display:flex;justify-content:space-between;gap:1rem;
+  margin-bottom:clamp(2rem,6vw,5rem);
+  font:500 .75rem/1 var(--f-mono);text-transform:uppercase;letter-spacing:.14em;color:var(--muted);
+}
+.name{
+  margin:0;font-family:var(--f-display);font-weight:400;font-stretch:85%;
+  font-size:clamp(3.4rem,17.5vw,19rem);line-height:.84;letter-spacing:-.045em;
+}
+.line{display:block;white-space:nowrap}
+.l2{padding-left:clamp(0px,9vw,11rem)}
+.ch{display:inline-block;will-change:transform}
+.ci{
+  display:inline-block;
+  animation:rise 1.1s cubic-bezier(.2,.8,.2,1) backwards;
+  animation-delay:calc(var(--i,0)*55ms + 150ms);
+}
+@keyframes rise{from{transform:translateY(55%);opacity:0}}
+
+
+.meta{
+  display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:1.5rem;
+  margin-top:clamp(2.5rem,6vw,5rem);padding-top:1.25rem;border-top:1px solid var(--line);
+}
+.k{
+  display:block;margin-bottom:.6rem;
+  font:500 .72rem/1 var(--f-mono);text-transform:uppercase;letter-spacing:.12em;color:var(--muted);
+}
+.v{font:500 clamp(1.05rem,1.6vw,1.35rem)/1.25 var(--f-display);letter-spacing:-.01em}
+.cue i{display:block;position:relative;width:1px;height:2.2rem;background:var(--line);overflow:hidden}
+.cue i::after{
+  content:"";position:absolute;left:0;top:0;width:1px;height:50%;background:var(--ink);
+  animation:cue 2s ease-in-out infinite;
+}
+@keyframes cue{0%{transform:translateY(-100%)}100%{transform:translateY(200%)}}
+@media (max-width:640px){.meta{grid-template-columns:repeat(2,minmax(0,1fr))}.cue{display:none}}
+
+/* ---------- shared ---------- */
+.sec{padding-block:clamp(4.5rem,11vw,10rem)}
+.label{
+  display:flex;align-items:center;gap:1rem;margin:0 0 clamp(2rem,5vw,4rem);
+  font:500 .75rem/1 var(--f-mono);text-transform:uppercase;letter-spacing:.14em;color:var(--muted);
+}
+.label::after{content:"";flex:1;height:1px;background:var(--line)}
+.h2{
+  margin:0 0 1.25rem;font-family:var(--f-display);font-weight:600;font-stretch:85%;
+  font-size:clamp(2rem,5.2vw,4.4rem);line-height:.95;letter-spacing:-.035em;text-wrap:balance;
+}
+
+/* ---------- about ---------- */
+.statement{
+  margin:0;max-width:21em;
+  font-family:var(--f-display);font-weight:500;font-stretch:90%;
+  font-size:clamp(1.9rem,5.2vw,4.9rem);line-height:1.04;letter-spacing:-.03em;text-wrap:balance;
+}
+.w{color:var(--muted);transition:color .35s ease}
+.w.on{color:var(--ink)}
+.hand{font-family:var(--f-hand);font-weight:400;font-size:1.3em;letter-spacing:0;line-height:.8}
+.hand .w.on{color:var(--accent)}
+.aside{display:grid;grid-template-columns:repeat(12,minmax(0,1fr));margin-top:clamp(2.5rem,6vw,5rem)}
+.aside{gap:1.25rem 2rem}
+.aside-h{
+  grid-column:1 / span 4;margin:0;
+  font:500 .75rem/1.6 var(--f-mono);text-transform:uppercase;letter-spacing:.12em;color:var(--muted);
+}
+.bio{grid-column:5 / span 8;min-width:0;max-width:60ch}
+.bio p{margin:0 0 1.1em;font-size:clamp(1.05rem,1.4vw,1.25rem);line-height:1.6}
+.bio p:last-child{margin-bottom:0}
+@media (max-width:760px){.aside-h,.bio{grid-column:1 / -1}}
+
+/* ---------- marquee ---------- */
+.marquee{
+  margin-inline:calc(var(--gutter) * -1);overflow:hidden;
+  padding-block:clamp(1rem,3vw,2rem);border-block:1px solid var(--line);
+}
+.track{
+  display:flex;width:max-content;white-space:nowrap;will-change:transform;
+  font:400 clamp(3rem,10vw,9rem)/1 var(--f-display);font-stretch:80%;letter-spacing:-.04em;
+}
+.grp{display:flex;align-items:baseline}
+.grp span{padding-right:.35em}
+.m1{font-weight:200}
+.m2{font-weight:800}
+.dash{color:var(--accent);font-weight:300}
+
+/* ---------- spotlight (advert panels) ---------- */
+.spot{
+  display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:clamp(.75rem,1.5vw,1.25rem);
+  padding-block:clamp(3rem,7vw,6rem);
+}
+.ad{
+  display:flex;flex-direction:column;justify-content:space-between;gap:clamp(2.5rem,6vw,5rem);min-width:0;
+  min-height:clamp(26rem,42vw,36rem);padding:clamp(1.25rem,2.5vw,2.25rem);
+  border:1px solid var(--line);background:var(--surface);color:var(--ink);overflow:hidden;
+}
+.ad-pu{background:var(--accent);border-color:var(--accent);color:var(--bg)}
+.ad-top{display:flex;justify-content:space-between;align-items:center;gap:1rem;flex-wrap:wrap}
+.ad-top .tag{display:inline-flex;align-items:center;gap:.6rem}
+.ad-top .dot{background:currentColor}
+.ad-name{
+  margin:0;font-family:var(--f-display);font-weight:700;font-stretch:80%;
+  font-size:clamp(3rem,8.5vw,8rem);line-height:.88;letter-spacing:-.045em;overflow-wrap:anywhere;
+}
+.ad-name .tm{color:inherit}
+.ad-tag{
+  margin:1rem 0 0;font:300 clamp(1.4rem,2.6vw,2.4rem)/1.1 var(--f-display);letter-spacing:-.025em;text-wrap:balance;
+}
+.ad-copy{margin:1rem 0 0;max-width:38ch;opacity:.85;font-size:clamp(1rem,1.3vw,1.15rem)}
+.ad-cta{
+  align-self:flex-start;display:inline-flex;align-items:center;gap:.8rem;padding:1rem 1.3rem;
+  border:1px solid currentColor;color:inherit;text-decoration:none;
+  font:500 .8rem/1 var(--f-mono);text-transform:uppercase;letter-spacing:.1em;
+  transition:background .3s ease,color .3s ease,border-color .3s ease;
+}
+.ad-cta svg{width:1.1rem;height:1.1rem;stroke:currentColor;fill:none;stroke-width:1.8;transition:transform .3s ease}
+.ad-cta:hover svg{transform:translate(3px,-3px)}
+.ad-pu .ad-cta:hover{background:var(--bg);color:var(--accent);border-color:var(--bg)}
+.ad-sn .ad-cta:hover{background:var(--ink);color:var(--bg);border-color:var(--ink)}
+@media (max-width:760px){.spot{grid-template-columns:minmax(0,1fr)}.ad{min-height:22rem}}
+
+/* ---------- SparkNews ---------- */
+.wordmark{
+  margin:0;font-family:var(--f-display);font-stretch:80%;
+  font-size:clamp(3.4rem,17vw,18rem);line-height:.86;letter-spacing:-.045em;
+}
+.wm{display:block;white-space:nowrap}
+.wm span{display:inline-block}
+.wm.a span{font-weight:800}
+.wm.b{padding-left:clamp(0px,12vw,14rem)}
+.wm.b span{font-weight:200}
+.tm{
+  font-size:.2em;font-weight:500;letter-spacing:0;vertical-align:top;line-height:1;
+  margin-left:.12em;margin-top:.9em;color:var(--accent);
+}
+.sn{
+  display:grid;grid-template-columns:repeat(12,minmax(0,1fr));gap:2rem;
+  margin-top:clamp(2.5rem,6vw,5rem);
+}
+.lede{
+  grid-column:1 / span 5;margin:0;
+  font-size:clamp(1.2rem,2vw,1.6rem);line-height:1.4;letter-spacing:-.01em;
+}
+.spec{grid-column:7 / span 6;margin:0;min-width:0}
+.spec div{
+  display:grid;grid-template-columns:8rem minmax(0,1fr);gap:1rem;
+  padding:1rem 0;border-top:1px solid var(--line);
+}
+.spec div:last-child{border-bottom:1px solid var(--line)}
+.spec dt{font:500 .75rem/1.6 var(--f-mono);text-transform:uppercase;letter-spacing:.12em;color:var(--muted)}
+.spec dd{margin:0;font:500 clamp(1.1rem,1.8vw,1.45rem)/1.25 var(--f-display);letter-spacing:-.01em}
+@media (max-width:860px){.lede,.spec{grid-column:1 / -1}}
+@media (max-width:420px){.spec div{grid-template-columns:1fr;gap:.25rem}}
+
+/* ---------- Pocket Union ---------- */
+.pu .wm.a span{color:var(--accent)}
+.pu-top{
+  display:grid;grid-template-columns:repeat(12,minmax(0,1fr));gap:1.5rem 2rem;align-items:end;
+  margin-top:clamp(2.5rem,6vw,5rem);
+}
+.pu-lede{
+  grid-column:1 / span 7;margin:0;
+  font:500 clamp(1.6rem,3.4vw,3rem)/1.08 var(--f-display);font-stretch:90%;letter-spacing:-.03em;text-wrap:balance;
+}
+.pu-sub{grid-column:9 / span 4;margin:0;color:var(--muted)}
+@media (max-width:860px){.pu-lede,.pu-sub{grid-column:1 / -1}}
+
+.pu-stage{
+  display:grid;grid-template-columns:repeat(12,minmax(0,1fr));gap:2rem;align-items:center;
+  margin-top:clamp(3rem,7vw,6rem);
+}
+.pu-visual{grid-column:1 / span 5;display:grid;place-items:center;padding-block:2.5rem;min-width:0}
+.pu-info{grid-column:7 / span 6;min-width:0}
+@media (max-width:860px){.pu-visual,.pu-info{grid-column:1 / -1}}
+
+.nb{
+  --cover:var(--accent);
+  position:relative;width:min(19rem,78%);aspect-ratio:3/4;
+  display:flex;flex-direction:column;justify-content:space-between;
+  padding:1.4rem 1.4rem 1.4rem 2.3rem;border-radius:.9rem 1.5rem 1.5rem .9rem;
+  background:var(--cover);color:var(--bg);
+  box-shadow:6px 6px 0 -1px var(--surface),7px 7px 0 0 var(--line),0 40px 60px -28px color-mix(in srgb,var(--ink) 55%,transparent);
+  transform:perspective(900px) rotateY(var(--ry,-10deg)) rotateX(var(--rx,4deg)) rotate(-3deg);
+  transition:transform .3s ease,background-color .7s ease,width .6s ease,aspect-ratio .6s ease,padding .6s ease;
+}
+.nb[data-ed="1"]{--cover:var(--e2);padding-bottom:calc(24% + 1rem)}
+.nb[data-ed="2"]{--cover:var(--e3);width:min(14.5rem,64%);aspect-ratio:3/4.4}
+.nb::before{content:"";position:absolute;top:0;bottom:0;left:0;width:7%;border-radius:.9rem 0 0 .9rem;background:rgba(0,0,0,.22)}
+.nb::after{content:"";position:absolute;top:-1px;bottom:-1px;right:13%;width:.65rem;background:rgba(0,0,0,.4)}
+.nb > *{position:relative}
+.nb-k{font:500 .7rem/1 var(--f-mono);text-transform:uppercase;letter-spacing:.14em}
+.nb-name{
+  display:block;font:700 clamp(2rem,4.4vw,3rem)/.92 var(--f-display);font-stretch:80%;letter-spacing:-.04em;
+}
+.nb-pocket{
+  position:absolute;left:2.3rem;right:1.4rem;bottom:0;height:24%;border-radius:.7rem .7rem 0 0;
+  background:rgba(0,0,0,.2);opacity:0;transition:opacity .5s ease;
+}
+.nb-pocket i{position:absolute;left:18%;top:-.9rem;width:34%;height:1.6rem;border-radius:.25rem;background:var(--bg);opacity:.9;transform:rotate(-4deg)}
+.nb[data-ed="1"] .nb-pocket{opacity:1}
+.ed-line{margin:0 0 .6rem;font:500 clamp(1.3rem,2.2vw,1.8rem)/1.15 var(--f-display);letter-spacing:-.02em;color:var(--accent)}
+
+/* name your notebook */
+.nb-owner{display:block;min-width:0}
+.nb-owner span{display:block;margin-bottom:.35rem;font:500 .62rem/1 var(--f-mono);text-transform:uppercase;letter-spacing:.14em;opacity:.8}
+.nb-owner b{
+  display:block;font:600 clamp(1.1rem,2.2vw,1.5rem)/1.05 var(--f-display);font-stretch:85%;letter-spacing:-.02em;
+  overflow-wrap:anywhere;text-shadow:0 1px 0 rgba(0,0,0,.25);
+}
+.nbf{margin-top:1.75rem;padding-top:1.5rem;border-top:1px solid var(--line)}
+.nbf label{display:block;margin-bottom:.7rem;font:500 .75rem/1.4 var(--f-mono);text-transform:uppercase;letter-spacing:.12em;color:var(--muted)}
+.nbf-row{display:flex;gap:.6rem;flex-wrap:wrap;align-items:stretch}
+.nbf input{
+  flex:1 1 14rem;min-width:0;padding:.9rem 1rem;border:1px solid var(--line);background:var(--surface);color:var(--ink);
+  font:500 1.15rem/1.2 var(--f-display);letter-spacing:-.01em;border-radius:0;
+  transition:border-color .25s ease;
+}
+.nbf input::placeholder{color:var(--muted);opacity:.8}
+.nbf input:hover,.nbf input:focus{border-color:var(--ink)}
+.nbf-hint{margin:.7rem 0 0;color:var(--muted);font-size:.92rem}
+.nbf-cta{display:inline-flex;align-items:center;gap:.5rem;margin-top:1rem;font:500 .75rem/1 var(--f-mono);text-transform:uppercase;letter-spacing:.1em;color:var(--accent);text-decoration:none;border-bottom:1px solid currentColor;padding-bottom:.3rem}
+.nbf-cta svg{width:1rem;height:1rem;stroke:currentColor;fill:none;stroke-width:1.8}
+
+/* articles */
+.art-head{display:flex;justify-content:space-between;align-items:flex-end;gap:1rem;flex-wrap:wrap}
+.art-count{margin:0 0 1.25rem;font:500 .75rem/1 var(--f-mono);text-transform:uppercase;letter-spacing:.14em;color:var(--muted)}
+.art-list{list-style:none;margin:2.5rem 0 0;padding:0;border-bottom:1px solid var(--line)}
+.art{
+  display:grid;grid-template-columns:8.5rem minmax(0,1fr) auto;gap:.5rem 2rem;align-items:baseline;
+  padding:1.6rem 0;border-top:1px solid var(--line);color:var(--ink);text-decoration:none;
+  transition:padding .35s ease,background .35s ease,color .35s ease,border-color .35s ease;
+}
+.art:hover{padding-inline:1rem;background:var(--ink);color:var(--bg);border-color:var(--ink)}
+.art-date{font:500 .75rem/1.6 var(--f-mono);text-transform:uppercase;letter-spacing:.12em;opacity:.7}
+.art-main{min-width:0}
+.art-src{display:block;margin-bottom:.5rem;font:500 .7rem/1 var(--f-mono);text-transform:uppercase;letter-spacing:.12em;color:var(--accent);transition:color .35s ease}
+.art:hover .art-src{color:inherit;opacity:.8}
+.art-title{margin:0;font:600 clamp(1.5rem,3.2vw,2.8rem)/1.05 var(--f-display);font-stretch:85%;letter-spacing:-.03em;text-wrap:balance}
+.art-dek{margin:.6rem 0 0;max-width:60ch;opacity:.75}
+.art svg{width:1.5rem;height:1.5rem;align-self:center;stroke:currentColor;fill:none;stroke-width:1.6;transition:transform .35s ease}
+.art:hover svg{transform:translate(3px,-3px)}
+.art-empty{margin-top:2.5rem;padding:clamp(1.5rem,4vw,3rem);border:1px dashed var(--line);background:var(--surface)}
+.art-empty p{margin:0;font:300 clamp(1.5rem,3.6vw,3rem)/1.1 var(--f-display);letter-spacing:-.03em;color:var(--muted)}
+.art-empty span{display:block;margin-top:1rem;font:500 .72rem/1 var(--f-mono);text-transform:uppercase;letter-spacing:.14em;color:var(--accent)}
+@media (max-width:760px){.art{grid-template-columns:minmax(0,1fr)}.art svg{display:none}}
+
+/* press kit */
+.pk{list-style:none;margin:2.5rem 0 0;padding:0}
+.pkr{
+  display:grid;grid-template-columns:8rem minmax(0,1fr) auto;gap:1rem 2rem;align-items:start;
+  padding:1.5rem 0;border-top:1px solid var(--line);
+}
+.pkr:last-child{border-bottom:1px solid var(--line)}
+.pk-l{font:500 .75rem/1.9 var(--f-mono);text-transform:uppercase;letter-spacing:.12em;color:var(--muted)}
+.pk-t{margin:0;min-width:0;max-width:62ch;font-size:clamp(1.05rem,1.4vw,1.25rem);line-height:1.55}
+.pk-t.pre{white-space:pre-line}
+.pk-note{margin:0 0 .5rem;max-width:50ch;color:var(--muted)}
+.fine a{color:inherit;text-underline-offset:.3em}
+.fine a:hover{color:var(--accent)}
+@media (max-width:760px){.pkr{grid-template-columns:minmax(0,1fr)}}
+
+/* easter egg: ink mode */
+.ink-cv{position:fixed;inset:0;width:100%;height:100%;pointer-events:none;z-index:95;display:none}
+html.ink .ink-cv{display:block}
+.ink-banner{
+  position:fixed;left:50%;bottom:calc(env(safe-area-inset-bottom,0px) + 2rem);z-index:96;
+  max-width:calc(100vw - 32px);padding:.5rem 1.4rem;text-align:center;pointer-events:none;
+  border:1px solid var(--line);background:var(--surface);color:var(--accent);
+  font:400 clamp(2rem,6vw,3.4rem)/1 var(--f-hand);
+  transform:translateX(-50%) rotate(-2deg);opacity:0;transition:opacity .4s ease;
+}
+.ink-banner.show{opacity:1}
+.nb-sub{display:block;margin-top:.6rem;font:300 1rem/1.1 var(--f-display);letter-spacing:-.01em;opacity:.9}
+
+.tabs{display:flex;gap:.5rem;flex-wrap:wrap;margin-bottom:1.75rem}
+.tab{
+  padding:.8rem 1.05rem;border:1px solid var(--line);background:transparent;color:var(--ink);
+  font:500 .75rem/1 var(--f-mono);text-transform:uppercase;letter-spacing:.1em;
+  transition:background .25s ease,color .25s ease,border-color .25s ease;
+}
+.tab:hover{border-color:var(--ink)}
+.tab[aria-selected="true"]{background:var(--ink);color:var(--bg);border-color:var(--ink)}
+.ed-name{margin:0 0 .6rem;font:700 clamp(2.6rem,5.6vw,5rem)/.92 var(--f-display);font-stretch:80%;letter-spacing:-.04em}
+.ed-desc{margin:0 0 1.5rem;max-width:34ch;font-size:clamp(1.1rem,1.6vw,1.35rem);line-height:1.35}
+.ed-spec{margin:0}
+.ed-spec div{display:grid;grid-template-columns:7rem minmax(0,1fr);gap:1rem;padding:.9rem 0;border-top:1px solid var(--line)}
+.ed-spec div:last-child{border-bottom:1px solid var(--line)}
+.ed-spec dt{font:500 .72rem/1.7 var(--f-mono);text-transform:uppercase;letter-spacing:.12em;color:var(--muted)}
+.ed-spec dd{margin:0;font:500 clamp(1.05rem,1.6vw,1.3rem)/1.25 var(--f-display);letter-spacing:-.01em}
+.concept{margin:1.25rem 0 0;font:500 .7rem/1.5 var(--f-mono);text-transform:uppercase;letter-spacing:.12em;color:var(--muted)}
+@media (max-width:420px){.ed-spec div{grid-template-columns:1fr;gap:.2rem}}
+
+.ritual-words{margin-top:clamp(3.5rem,8vw,7rem)}
+.rit{
+  margin:0;font:700 clamp(3.4rem,15vw,15rem)/.9 var(--f-display);font-stretch:78%;letter-spacing:-.05em;
+  color:var(--line);transition:color .5s ease;
+}
+.rit.on{color:var(--ink)}
+.rit.x.on{color:var(--accent)}
+
+.pu-grid{
+  display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:clamp(.75rem,1.5vw,1.25rem);
+  margin-top:clamp(3rem,7vw,6rem);
+}
+.pu-item{padding:1.25rem;border:1px solid var(--line);background:var(--surface);min-width:0}
+.pu-item h3{margin:0 0 .5rem;font:600 clamp(1.2rem,1.8vw,1.5rem)/1.1 var(--f-display);letter-spacing:-.02em}
+.pu-item p{margin:0;color:var(--muted);font-size:.95rem}
+.pu-note{
+  grid-column:1 / -1;padding:clamp(1.5rem,4vw,3rem);background:var(--accent);color:var(--bg);
+  font:300 clamp(2rem,6vw,5.5rem)/1 var(--f-display);font-stretch:85%;letter-spacing:-.04em;
+}
+.pu-note small{display:block;margin-top:1rem;font:500 .72rem/1 var(--f-mono);text-transform:uppercase;letter-spacing:.14em;opacity:.85}
+@media (max-width:860px){.pu-grid{grid-template-columns:repeat(2,minmax(0,1fr))}}
+@media (max-width:520px){.pu-grid{grid-template-columns:minmax(0,1fr)}}
+
+/* ---------- Now ---------- */
+.now-head{display:flex;justify-content:space-between;align-items:flex-end;gap:1rem 2rem;flex-wrap:wrap;margin-bottom:clamp(2rem,5vw,4rem)}
+.now-big{
+  margin:0;font:800 clamp(5rem,24vw,24rem)/.8 var(--f-display);font-stretch:75%;letter-spacing:-.05em;
+}
+.caret{display:inline-block;width:.09em;height:.72em;margin-left:.06em;background:var(--accent);animation:blink 1.1s steps(1) infinite}
+@keyframes blink{50%{opacity:0}}
+.now-meta{
+  display:flex;align-items:center;gap:.6rem;margin:0;
+  font:500 .75rem/1 var(--f-mono);text-transform:uppercase;letter-spacing:.14em;color:var(--muted);
+}
+.now-meta .dot{background:var(--accent)}
+.now-grid{display:grid;grid-template-columns:repeat(12,minmax(0,1fr));gap:clamp(.75rem,1.5vw,1.25rem)}
+.nowc{
+  position:relative;overflow:hidden;display:flex;flex-direction:column;justify-content:space-between;gap:3rem;min-width:0;
+  min-height:clamp(14rem,22vw,20rem);padding:clamp(1.1rem,2vw,1.75rem);
+  border:1px solid var(--line);background:var(--surface);color:var(--ink);text-decoration:none;
+  transition:border-color .3s ease,background .35s ease,color .35s ease;
+}
+.nowc::before{
+  content:"";position:absolute;inset:0;pointer-events:none;opacity:0;transition:opacity .3s ease;
+  background:radial-gradient(24rem circle at var(--mx,50%) var(--my,0%),color-mix(in srgb,var(--accent) 24%,transparent),transparent 65%);
+}
+.nowc:hover{border-color:var(--accent)}
+.nowc:hover::before{opacity:1}
+.nowc > *{position:relative}
+.nowc-top{display:flex;justify-content:space-between;align-items:center;gap:1rem;flex-wrap:wrap}
+.nowc-top .tag{display:inline-flex;align-items:center;gap:.6rem}
+.nowc-top .dot{background:var(--accent)}
+.nowc h3{margin:0 0 .6rem;font:700 clamp(2rem,4.6vw,4.2rem)/.92 var(--f-display);font-stretch:80%;letter-spacing:-.04em;overflow-wrap:anywhere}
+.nowc p{margin:0;max-width:34ch;opacity:.8}
+.n1{grid-column:span 7}.n2{grid-column:span 5}.n3{grid-column:span 5}.n4{grid-column:span 7}
+.nowc.cta{background:var(--ink);color:var(--bg);border-color:var(--ink)}
+.nowc.cta:hover{background:var(--accent);border-color:var(--accent)}
+.nowc.cta .dot{background:currentColor}
+@media (max-width:760px){.n1,.n2,.n3,.n4{grid-column:1 / -1}.nowc{min-height:13rem}}
+
+/* ---------- CV ---------- */
+.cv-wrap{grid-column:5 / span 8}
+@media (max-width:760px){.cv-wrap{grid-column:1 / -1}}
+
+/* ---------- projects ---------- */
+.projects{display:grid;gap:clamp(.75rem,1.5vw,1.25rem);margin-top:2.5rem}
+.proj{
+  display:grid;grid-template-columns:minmax(0,1fr);gap:clamp(1.5rem,4vw,3rem);
+  min-height:clamp(15rem,24vw,22rem);padding:clamp(1.25rem,2.5vw,2.25rem);
+  border:1px solid var(--line);background:var(--surface);color:var(--ink);
+  text-decoration:none;overflow:hidden;align-content:space-between;
+  transition:background .35s ease,color .35s ease,border-color .35s ease;
+}
+a.proj:hover{background:var(--ink);color:var(--bg);border-color:var(--ink)}
+.proj-meta{display:flex;justify-content:space-between;align-items:center;gap:1rem;flex-wrap:wrap}
+.proj-meta .tag{display:inline-flex;align-items:center;gap:.6rem}
+.proj-meta svg{width:1.4rem;height:1.4rem;stroke:currentColor;fill:none;stroke-width:1.6;transition:transform .35s ease}
+a.proj:hover .proj-meta svg{transform:translate(3px,-3px)}
+.proj-name{
+  margin:0;font-family:var(--f-display);font-weight:700;font-stretch:80%;
+  font-size:clamp(2.8rem,10vw,9rem);line-height:.88;letter-spacing:-.045em;
+}
+.proj-line{
+  margin:0;max-width:32ch;opacity:.8;
+  font:500 clamp(1.15rem,2.2vw,1.8rem)/1.25 var(--f-display);letter-spacing:-.01em;
+}
+.wip{
+  border-style:dashed;
+  background-image:repeating-linear-gradient(135deg,transparent 0,transparent 14px,var(--line) 14px,var(--line) 15px);
+  transition:border-color .35s ease;
+}
+.wip:hover{border-color:var(--accent)}
+.wip .proj-line{
+  max-width:none;opacity:1;color:var(--accent);
+  font-size:clamp(1.6rem,3.8vw,3.2rem);font-weight:300;letter-spacing:-.025em;
+}
+.dot{width:.55rem;height:.55rem;border-radius:50%;background:var(--accent);animation:pulse 1.8s ease-in-out infinite}
+@keyframes pulse{50%{opacity:.25}}
+
+/* project hover popup: one floating card that follows the cursor and shows the hovered project's description */
+.proj-desc{display:none}
+.tip{
+  position:fixed;left:0;top:0;z-index:90;width:min(22rem,calc(100vw - 32px));
+  padding:1rem 1.15rem;pointer-events:none;opacity:0;transition:opacity .2s ease;
+  background:var(--surface);color:var(--ink);border:1px solid var(--line);
+  box-shadow:0 18px 40px -14px color-mix(in srgb,var(--ink) 40%,transparent);
+}
+.tip.show{opacity:1}
+.pop-k{
+  display:block;margin-bottom:.6rem;
+  font:500 .7rem/1 var(--f-mono);text-transform:uppercase;letter-spacing:.12em;color:var(--accent);
+}
+.tip p,.proj-desc p{margin:0 0 .65em;font-size:.95rem;line-height:1.5}
+.tip p:last-child,.proj-desc p:last-child{margin-bottom:0}
+.tip p.ritual,.proj-desc p.ritual{
+  font:500 .72rem/1.4 var(--f-mono);text-transform:uppercase;letter-spacing:.12em;color:var(--muted);
+}
+/* touch and other non-hover devices have no hover, so the description shows inside the card instead */
+@media not all and (hover:hover) and (pointer:fine){
+  .proj-desc{display:block;max-width:46ch}
+  .proj-desc .pop-k{display:none}
+}
+
+/* ---------- index grid ---------- */
+.grid{
+  display:grid;grid-template-columns:repeat(12,minmax(0,1fr));
+  gap:clamp(.75rem,1.5vw,1.25rem);margin-top:2.5rem;
+}
+.tile{
+  display:flex;flex-direction:column;justify-content:space-between;gap:3rem;min-width:0;
+  min-height:clamp(16rem,26vw,24rem);padding:clamp(1.1rem,2vw,1.75rem);
+  border:1px solid var(--line);background:var(--surface);color:var(--ink);
+  text-decoration:none;overflow:hidden;
+  transition:background .35s ease,color .35s ease,border-color .35s ease;
+}
+.tile:hover{background:var(--ink);color:var(--bg);border-color:var(--ink)}
+.t1{grid-column:span 7}.t2{grid-column:span 5}.t3{grid-column:span 5}.t4{grid-column:span 7}
+.tile-top{display:flex;justify-content:space-between;align-items:center;gap:1rem}
+.tag{font:500 .72rem/1 var(--f-mono);text-transform:uppercase;letter-spacing:.12em}
+.tile svg{width:1.4rem;height:1.4rem;stroke:currentColor;fill:none;stroke-width:1.6;transition:transform .35s ease}
+a.tile:hover svg{transform:translate(3px,-3px)}
+.tile h3{
+  margin:0 0 .6rem;font-family:var(--f-display);font-weight:600;font-stretch:85%;
+  font-size:clamp(2.4rem,6vw,5.5rem);line-height:.9;letter-spacing:-.04em;overflow-wrap:anywhere;
+}
+.tile p{margin:0;max-width:34ch;opacity:.75}
+@media (max-width:760px){.t1,.t2,.t3,.t4{grid-column:1 / -1}.tile{min-height:14rem}}
+
+/* ---------- pen ---------- */
+.pen-text{margin:0 0 clamp(1.5rem,3vw,2.5rem);max-width:46ch;color:var(--muted)}
+.pad{
+  position:relative;height:clamp(17rem,48vh,30rem);overflow:hidden;
+  border:1px solid var(--line);background-color:var(--surface);
+  background-image:repeating-linear-gradient(to bottom,transparent 0,transparent calc(3.2rem - 1px),var(--line) calc(3.2rem - 1px),var(--line) 3.2rem);
+}
+.pad canvas{position:absolute;inset:0;display:block;width:100%;height:100%;touch-action:none}
+.hint{
+  position:absolute;inset:0;display:grid;place-items:center;pointer-events:none;
+  font:400 clamp(2.5rem,8vw,6rem)/1 var(--f-hand);color:var(--muted);opacity:.8;transition:opacity .3s ease;
+}
+.pad[data-empty="false"] .hint{opacity:0}
+.tools{display:flex;gap:.75rem;margin-top:1rem}
+.btn{
+  padding:.8rem 1.1rem;border:1px solid var(--ink);background:transparent;color:var(--ink);
+  font:500 .75rem/1 var(--f-mono);text-transform:uppercase;letter-spacing:.1em;
+  transition:background .25s ease,color .25s ease,opacity .25s ease;
+}
+.btn:hover:not(:disabled){background:var(--ink);color:var(--bg)}
+.btn:disabled{opacity:.4}
+
+/* ---------- contact ---------- */
+.contacts{list-style:none;margin:2.5rem 0 0;padding:0}
+.crow{
+  display:grid;grid-template-columns:8rem minmax(0,1fr) auto;align-items:center;gap:1rem 2rem;
+  padding:1.5rem 0;border-top:1px solid var(--line);
+}
+.crow:last-child{border-bottom:1px solid var(--line)}
+.c-label{font:500 .75rem/1.6 var(--f-mono);text-transform:uppercase;letter-spacing:.12em;color:var(--muted)}
+.c-value{
+  min-width:0;overflow-wrap:anywhere;user-select:all;
+  font:600 clamp(1.25rem,3.6vw,3.2rem)/1.1 var(--f-display);font-stretch:85%;letter-spacing:-.03em;
+}
+.c-act{display:flex;gap:.6rem;flex-wrap:wrap}
+a.btn{display:inline-block;text-decoration:none}
+@media (max-width:760px){.crow{grid-template-columns:minmax(0,1fr)}}
+
+/* ---------- footer ---------- */
+.foot{padding-block:clamp(4rem,9vw,8rem) 2.5rem;border-top:1px solid var(--line)}
+.big{
+  margin:0;font:600 clamp(3rem,13vw,13rem)/.9 var(--f-display);font-stretch:80%;letter-spacing:-.045em;
+}
+.foot p.sub{margin:1.5rem 0 0;max-width:44ch;color:var(--muted)}
+.fine{
+  display:flex;flex-wrap:wrap;justify-content:space-between;gap:.75rem;margin-top:clamp(3rem,6vw,5rem);
+  font:500 .72rem/1.4 var(--f-mono);text-transform:uppercase;letter-spacing:.12em;color:var(--muted);
+}
+
+/* ---------- custom cursor ---------- */
+.cur{position:fixed;left:0;top:0;z-index:100;pointer-events:none;opacity:0;transition:opacity .25s ease}
+html.cursor-on .cur{opacity:1}
+.cur-dot{width:8px;height:8px;border-radius:50%;background:var(--accent)}
+.cur-ring{
+  display:grid;place-items:center;width:36px;height:36px;border-radius:50%;
+  border:1px solid var(--ink);color:var(--bg);
+  transition:width .28s ease,height .28s ease,background .28s ease,border-color .28s ease;
+}
+.cur-ring span{
+  font:500 .62rem/1 var(--f-mono);text-transform:uppercase;letter-spacing:.12em;opacity:0;transition:opacity .2s ease;
+}
+.cur-ring[data-s="link"]{width:60px;height:60px;border-color:var(--accent)}
+.cur-ring[data-s="label"]{width:84px;height:84px;background:var(--accent);border-color:var(--accent)}
+.cur-ring[data-s="label"] span{opacity:1}
+.cur-ring[data-s="write"]{width:14px;height:14px;border-color:var(--accent)}
+html.has-cursor,html.has-cursor *{cursor:none!important}
+@media (hover:none),(pointer:coarse){.cur{display:none}}
+
+@media (prefers-reduced-motion:reduce){
+  *,*::before,*::after{animation:none!important;transition:none!important}
+  html{scroll-behavior:auto}
+}
+</style>
+
+<div class="cur cur-dot" id="curDot" aria-hidden="true"></div>
+<div class="cur" id="curRing" aria-hidden="true"><div class="cur-ring" id="curBox"><span id="curLabel"></span></div></div>
+
+<div class="tip" id="tip" aria-hidden="true"></div>
+<canvas class="ink-cv" id="inkCv" aria-hidden="true"></canvas>
+<div class="ink-banner" id="inkBanner" role="status"></div>
+
+<div class="menu" id="menu" role="dialog" aria-modal="true" aria-label="Site menu" hidden>
+  <div class="menu-top">
+    <span>Menu</span>
+    <button class="btn" id="menuClose" type="button">Close</button>
+  </div>
+  <nav aria-label="All sections">
+    <ul class="menu-list">
+      <li><a href="#about" data-sec="about"><b>About</b><span>Who I am</span></a></li>
+      <li><a href="#sparknews" data-sec="sparknews"><b>SparkNews™</b><span>The student newspaper</span></a></li>
+      <li><a href="#pocketunion" data-sec="pocketunion"><b>Pocket Union™</b><span>Excellence on the Go</span></a></li>
+      <li><a href="#projects" data-sec="projects"><b>Projects</b><span>What I’m building</span></a></li>
+      <li><a href="#now" data-sec="now"><b>Now</b><span>What’s on right now</span></a></li>
+      <li><a href="#articles" data-sec="articles"><b>Articles</b><span>Selected reads</span></a></li>
+      <li class="hand-row" hidden><a href="#gallery" data-sec="gallery"><b>Handwriting</b><span>Pages by hand</span></a></li>
+      <li><a href="#pen" data-sec="pen"><b>Pen</b><span>Try it yourself</span></a></li>
+      <li><a href="#contact" data-sec="contact"><b>Contact</b><span>Email or WhatsApp</span></a></li>
+      <li><a href="#press" data-sec="press"><b>Press kit</b><span>Bios and facts</span></a></li>
+      <li class="cv-row" hidden><a class="cv-link" href="cv.pdf" target="_blank" rel="noopener"><b>CV</b><span>Résumé, PDF</span></a></li>
+    </ul>
+  </nav>
+  <p class="menu-foot">victor.stanovoy.mail@gmail.com</p>
+</div>
+
+<div class="lb" id="lb" role="dialog" aria-modal="true" aria-label="Handwriting viewer" hidden>
+  <button class="btn lb-x" id="lbX" type="button">Close</button>
+  <button class="lb-n" id="lbPrev" type="button" aria-label="Previous photo"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M15 5l-7 7 7 7"/></svg></button>
+  <figure><img id="lbImg" alt=""><figcaption id="lbCap"></figcaption></figure>
+  <button class="lb-n" id="lbNext" type="button" aria-label="Next photo"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M9 5l7 7-7 7"/></svg></button>
+</div>
+
+<header class="bar">
+  <a class="mark" href="#top"><span class="full">Victor Stanovoy</span><span class="short">VS</span></a>
+  <div class="bar-r">
+    <nav aria-label="Main sections">
+      <a href="#about" data-sec="about">About</a>
+      <a href="#pocketunion" data-sec="pocketunion">Pocket Union™</a>
+      <a href="#articles" data-sec="articles">Articles</a>
+      <a href="#contact" data-sec="contact">Contact</a>
+    </nav>
+    <button class="theme" id="themeBtn" type="button" aria-label="Switch theme" data-cursor="Theme"></button>
+    <button class="menu-btn" id="menuBtn" type="button" aria-expanded="false" aria-controls="menu" data-cursor="Menu"><i aria-hidden="true"></i>Menu</button>
+  </div>
+</header>
+
+<main>
+  <section class="hero" id="top">
+    <div class="top-meta"><span>Portfolio</span><span>2026</span></div>
+
+    <h1 class="name" aria-label="Victor Stanovoy">
+      <span class="line" aria-hidden="true" data-split>Victor</span>
+      <span class="line l2" aria-hidden="true" data-split>Stanovoy</span>
+    </h1>
+
+    <div class="meta">
+      <div><span class="k">Role</span><span class="v">Founder &amp; CEO, SparkNews™ and Pocket Union™</span></div>
+      <div><span class="k">Practice</span><span class="v">Writing by hand</span></div>
+      <div class="cue" aria-hidden="true"><span class="k">Scroll</span><i></i></div>
+    </div>
+  </section>
+
+  <section class="sec" id="about">
+    <p class="label">About</p>
+    <p class="statement" id="statement">I’m Victor Stanovoy, founder and CEO of SparkNews™, and the creator of Pocket Union, a premium collection of thoughtfully made notebooks and travel accessories designed for life in motion. From the morning commute to journeys across the world, Pocket Union brings together refined design and everyday utility, creating objects made to carry, write, organise, and keep close. I believe the objects we carry should be as considered as the moments we use them for. <br> Kind Regards, <br> <span class="hand">Victor Stanovoy</span> </p>
+    <div class="aside">
+      <h3 class="aside-h">In my own words</h3>
+      <div class="bio" id="bio">
+        <!-- EDIT HERE: write your own About text. Each <p>…</p> is one paragraph; add as many as you like. -->
+        <p>My story, in my own words, is coming soon.</p>
+      </div>
+      <!-- CV button: appears by itself once a file named cv.pdf is next to this page -->
+      <div class="cv-wrap cv-row" hidden>
+        <a class="btn cv-link" href="cv.pdf" target="_blank" rel="noopener" data-cursor="CV">View my CV</a>
+      </div>
+    </div>
+  </section>
+
+  <div class="marquee" aria-hidden="true">
+    <div class="track" id="track">
+      <div class="grp">
+        <span class="m2">SparkNews™</span><span class="dash">—</span>
+        <span class="m1">Pocket Union™</span><span class="dash">—</span>
+        <span class="m1">Founder &amp; CEO</span><span class="dash">—</span>
+      </div>
+    </div>
+  </div>
+
+  <section class="spot" id="spotlight" aria-label="Spotlight">
+    <!-- EDIT HERE: these two panels are the advert. Change the words, or the link on each button. -->
+    <article class="ad ad-pu">
+      <div class="ad-top"><span class="tag"><i class="dot" aria-hidden="true"></i>In the works</span><span class="tag">New</span></div>
+      <div>
+        <h2 class="ad-name">Pocket Union<span class="tm">™</span></h2>
+        <p class="ad-tag">Excellence on the Go</p>
+        <p class="ad-copy">Thoughtfully made notebooks and travel accessories for life in motion, from the morning commute to journeys across the world.</p>
+      </div>
+      <a class="ad-cta" href="#pocketunion" data-cursor="Explore">Explore Pocket Union™
+        <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M7 17L17 7M8 7h9v9"/></svg></a>
+    </article>
+    <article class="ad ad-sn">
+      <div class="ad-top"><span class="tag">Student newspaper</span><span class="tag">Multiple schools</span></div>
+      <div>
+        <h2 class="ad-name">SparkNews<span class="tm">™</span></h2>
+        <p class="ad-tag">News from students, for students.</p>
+        <p class="ad-copy">A student newspaper that doesn’t stop at one school’s gates.</p>
+      </div>
+      <a class="ad-cta" href="https://sparknews.base44.app" data-cursor="Read">Read SparkNews™
+        <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M7 17L17 7M8 7h9v9"/></svg></a>
+    </article>
+  </section>
+
+  <section class="sec" id="sparknews">
+    <p class="label">SparkNews™</p>
+    <h2 class="wordmark" aria-label="SparkNews™">
+      <span class="wm a" aria-hidden="true"><span data-speed="0.08">Spark</span></span>
+      <span class="wm b" aria-hidden="true"><span data-speed="-0.06">News<span class="tm">™</span></span></span>
+    </h2>
+    <div class="sn">
+      <p class="lede">SparkNews™ is a student newspaper that doesn’t stop at one school’s gates. It lives in multiple schools, and I run it as founder and CEO.</p>
+      <dl class="spec">
+        <div><dt>Role</dt><dd>Founder &amp; CEO</dd></div>
+        <div><dt>Publication</dt><dd>Student newspaper</dd></div>
+        <div><dt>Footprint</dt><dd>Multiple schools</dd></div>
+        <div><dt>Next</dt><dd>More details soon</dd></div>
+      </dl>
+    </div>
+  </section>
+
+  <section class="sec pu" id="pocketunion">
+    <p class="label">Pocket Union™</p>
+    <h2 class="wordmark" aria-label="Pocket Union™">
+      <span class="wm a" aria-hidden="true"><span data-speed="0.08">Pocket</span></span>
+      <span class="wm b" aria-hidden="true"><span data-speed="-0.06">Union<span class="tm">™</span></span></span>
+    </h2>
+
+    <div class="pu-top">
+      <!-- EDIT HERE: the idea behind Pocket Union™ -->
+      <p class="pu-lede">For people who use small pockets of time to reflect: a subway ride, a café table, a flight.</p>
+      <p class="pu-sub">“Union” stands for connection: with yourself, with the moment, and with the people you share a commute or a café with.</p>
+    </div>
+
+    <div class="pu-stage">
+      <div class="pu-visual" id="puVisual">
+        <div class="nb" id="nb" data-ed="0" role="img" aria-label="Pocket Union notebook cover">
+          <span class="nb-k">Pocket Union™</span>
+          <i class="nb-pocket" aria-hidden="true"><i></i></i>
+          <div class="nb-owner" id="nbOwnerWrap" hidden><span>This notebook belongs to</span><b id="nbOwner"></b></div>
+          <div><span class="nb-name" id="nbName">The Standard</span><span class="nb-sub">Excellence on the Go</span></div>
+        </div>
+      </div>
+      <div class="pu-info">
+        <div class="tabs" role="tablist" aria-label="Notebook editions">
+          <button class="tab" role="tab" type="button" id="tab0" aria-controls="edPanel" aria-selected="true" data-cursor="Show">The Standard</button>
+          <button class="tab" role="tab" type="button" id="tab1" aria-controls="edPanel" aria-selected="false" tabindex="-1" data-cursor="Show">The Meridian</button>
+          <button class="tab" role="tab" type="button" id="tab2" aria-controls="edPanel" aria-selected="false" tabindex="-1" data-cursor="Show">The Commuter</button>
+        </div>
+        <div id="edPanel" role="tabpanel" aria-labelledby="tab0">
+          <h3 class="ed-name" id="edName">The Standard</h3>
+          <p class="ed-line" id="edLine">The one you reach for every day.</p>
+          <p class="ed-desc" id="edDesc">An A5 notebook that lies flat on the table, so your hand never fights the spine. Room for long, unhurried entries and the thinking that comes with them.</p>
+          <dl class="ed-spec">
+            <div><dt>Format</dt><dd id="edFormat">A5, lay-flat binding</dd></div>
+            <div><dt>Built for</dt><dd id="edFor">Longer sessions at a café table</dd></div>
+          </dl>
+        </div>
+        <div class="nbf">
+          <label for="nbInput">Put your name on it</label>
+          <div class="nbf-row">
+            <input id="nbInput" type="text" maxlength="18" autocomplete="off" spellcheck="false" placeholder="Your name" data-cursor="Write">
+            <button class="btn" id="nbClear" type="button" hidden>Clear</button>
+          </div>
+          <p class="nbf-hint">Type a name and it appears on the cover. It stays on this page only.</p>
+          <a class="nbf-cta" id="nbCta" href="#contact" hidden>Interested? Say hello
+            <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M7 17L17 7M8 7h9v9"/></svg></a>
+        </div>
+        <p class="concept">Three editions, already developed.</p>
+      </div>
+    </div>
+
+    <div class="ritual-words" aria-label="Connect. Reflect. Excel.">
+      <p class="rit">Connect.</p>
+      <p class="rit">Reflect.</p>
+      <p class="rit x">Excel.</p>
+    </div>
+
+    <div class="pu-grid">
+      <!-- EDIT HERE: the details that make Pocket Union™ what it is -->
+      <div class="pu-item"><h3>A three-part ritual</h3><p>Connect. Reflect. Excel. printed on the first pages.</p></div>
+      <div class="pu-item"><h3>Prompts on the page</h3><p>A subtle line on the pages: “What did you notice today?”</p></div>
+      <div class="pu-item"><h3>Rounded corners</h3><p>Soft edges, made to live in a pocket or a bag.</p></div>
+      <div class="pu-item"><h3>Elastic closure</h3><p>Keeps everything in place while you move.</p></div>
+      <div class="pu-item"><h3>A back pocket</h3><p>Room for tickets and receipts.</p></div>
+      <div class="pu-item"><h3>Ink-friendly paper</h3><p>Paper that won’t bleed through in a bag.</p></div>
+      <div class="pu-note">Made for the in-between.<small>A note inside every cover</small></div>
+    </div>
+  </section>
+
+  <section class="sec" id="projects">
+    <p class="label">Projects</p>
+    <h2 class="h2">What I’m building.</h2>
+    <div class="projects">
+      <a class="proj" href="#sparknews" data-cursor="View" aria-describedby="desc-sparknews">
+        <div class="proj-meta">
+          <span class="tag">Founder &amp; CEO</span>
+          <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M7 17L17 7M8 7h9v9"/></svg>
+        </div>
+        <h3 class="proj-name" data-speed="0.03">SparkNews<span class="tm">™</span></h3>
+        <p class="proj-line">A student newspaper that lives in more than one school.</p>
+        <div class="proj-desc" id="desc-sparknews">
+          <!-- EDIT HERE: this is the popup text for SparkNews™. Each <p>…</p> is one paragraph. Keep it to two or three short ones. -->
+          <span class="pop-k">SparkNews™</span>
+          <p>A student newspaper that lives in more than one school. I founded it and lead it as CEO.</p>
+        </div>
+      </a>
+      <div class="proj wip" data-cursor="Soon" tabindex="0" role="group" aria-label="Pocket Union, work in progress" aria-describedby="desc-pocketunion">
+        <div class="proj-meta">
+          <span class="tag"><i class="dot" aria-hidden="true"></i>Work in progress</span>
+          <span class="tag">Details soon</span>
+        </div>
+        <h3 class="proj-name" data-speed="-0.03">Pocket Union<span class="tm">™</span></h3>
+        <p class="proj-line">Excellence on the Go</p>
+        <div class="proj-desc" id="desc-pocketunion">
+          <!-- EDIT HERE: this is the popup text for Pocket Union™. Each <p>…</p> is one paragraph. -->
+            <span class="pop-k">Pocket Union™</span>
+            <p>Thoughtfully made essentials for life in motion.</p>
+            <p>From the morning commute to journeys across the world, Pocket Union brings together refined notebooks and travel accessories designed to move with you.</p>
+            <p class="ritual">For the places you go, and everything in between.</p>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <section class="sec" id="now">
+    <p class="label">Now</p>
+    <div class="now-head">
+      <h2 class="now-big" aria-label="Now">Now<span class="caret" aria-hidden="true"></span></h2>
+      <p class="now-meta"><i class="dot" aria-hidden="true"></i>Updated October 2026</p>
+    </div>
+    <div class="now-grid">
+      <!-- EDIT HERE: what you are doing right now. Change the words, the status labels, or the "Updated" date above. -->
+      <article class="nowc n1">
+        <div class="nowc-top"><span class="tag"><i class="dot" aria-hidden="true"></i>Building</span><span class="tag">In the works</span></div>
+        <div><h3>Pocket Union™</h3><p>Notebooks and travel accessories for life in motion.</p></div>
+      </article>
+      <article class="nowc n2">
+        <div class="nowc-top"><span class="tag"><i class="dot" aria-hidden="true"></i>Running</span><span class="tag">Live</span></div>
+        <div><h3>SparkNews™</h3><p>A student newspaper across multiple schools.</p></div>
+      </article>
+      <article class="nowc n3">
+        <div class="nowc-top"><span class="tag"><i class="dot" aria-hidden="true"></i>Practising</span><span class="tag">Daily</span></div>
+        <div><h3>Writing by hand</h3><p>Pen, paper, and a lot of ink.</p></div>
+      </article>
+      <a class="nowc n4 cta" href="#contact" data-cursor="Hello">
+        <div class="nowc-top"><span class="tag"><i class="dot" aria-hidden="true"></i>Next</span><span class="tag">Open</span></div>
+        <div><h3>Got an idea? Say hello.</h3><p>Questions, collaborations and good conversations are welcome.</p></div>
+      </a>
+    </div>
+  </section>
+
+  <section class="sec" id="articles">
+    <p class="label">Articles</p>
+    <div class="art-head">
+      <h2 class="h2">Selected reads.</h2>
+      <p class="art-count" id="artCount" hidden></p>
+    </div>
+    <!-- Add your articles in the ARTICLES list in the script near the end of this file (search for ARTICLES). -->
+    <ul class="art-list" id="artList" hidden></ul>
+    <div class="art-empty" id="artEmpty"><p>Articles are on the way.</p><span>Coming soon</span></div>
+  </section>
+
+  <section class="sec" id="index">
+    <p class="label">Index</p>
+    <h2 class="h2">Work, writing and the pen.</h2>
+    <div class="grid">
+      <a class="tile t1" href="https://sparknews.base44.app" data-cursor="Open">
+        <div class="tile-top"><span class="tag">Founder &amp; CEO</span>
+          <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M7 17L17 7M8 7h9v9"/></svg></div>
+        <div><h3 data-speed="0.03">SparkNews™</h3><p>A student newspaper across multiple schools.</p></div>
+      </a>
+      <a class="tile t2" href="#pen" data-cursor="Open">
+        <div class="tile-top"><span class="tag">Practice</span>
+          <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M7 17L17 7M8 7h9v9"/></svg></div>
+        <div><h3 data-speed="-0.03">By hand</h3><p>Pages, pens and penmanship. Try the pen below.</p></div>
+      </a>
+      <a class="tile t3" href="#articles" data-cursor="Open">
+        <div class="tile-top"><span class="tag">Writing</span>
+          <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M7 17L17 7M8 7h9v9"/></svg></div>
+        <div><h3 data-speed="0.03">Articles</h3><p>Selected pieces, collected in one place.</p></div>
+      </a>
+      <a class="tile t4" href="#contact" data-cursor="Open">
+        <div class="tile-top"><span class="tag">Contact</span>
+          <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M7 17L17 7M8 7h9v9"/></svg></div>
+        <div><h3 data-speed="-0.03">Say hello</h3><p>Email or WhatsApp.</p></div>
+      </a>
+    </div>
+  </section>
+
+  <section class="sec" id="gallery" hidden>
+    <p class="label">Handwriting</p>
+    <h2 class="h2">Pages by hand.</h2>
+    <!-- Add photos named handwriting-1.jpg, handwriting-2.jpg, handwriting-3.jpg and so on next to this file. They appear here by themselves. -->
+    <ul class="hg" id="hg"></ul>
+  </section>
+
+  <section class="sec" id="pen">
+    <p class="label">Pen</p>
+    <h2 class="h2">Try the pen.</h2>
+    <p class="pen-text">Write or draw below with a mouse, finger or stylus. Nothing is saved or sent anywhere.</p>
+    <div class="pad" id="pad" data-empty="true">
+      <canvas id="cv" role="img" aria-label="Drawing pad" data-cursor="Write"></canvas>
+      <div class="hint" aria-hidden="true">write here</div>
+    </div>
+    <div class="tools">
+      <button class="btn" id="undo" type="button" disabled>Undo</button>
+      <button class="btn" id="clear" type="button" disabled>Clear</button>
+    </div>
+  </section>
+
+  <section class="sec" id="contact">
+    <p class="label">Contact</p>
+    <h2 class="h2">Get in touch.</h2>
+    <ul class="contacts">
+      <li class="crow">
+        <span class="c-label">Email</span>
+        <span class="c-value" id="val-email">victor.stanovoy.mail@gmail.com</span>
+        <span class="c-act">
+          <a class="btn" href="mailto:victor.stanovoy.mail@gmail.com">Write</a>
+          <button class="btn" type="button" data-copy="val-email">Copy</button>
+        </span>
+      </li>
+      <li class="crow">
+        <span class="c-label">WhatsApp</span>
+        <span class="c-value" id="val-wa">@victor_250</span>
+        <span class="c-act"><button class="btn" type="button" data-copy="val-wa">Copy</button></span>
+      </li>
+      <li class="crow cv-row" hidden>
+        <span class="c-label">CV</span>
+        <span class="c-value">Résumé, PDF</span>
+        <span class="c-act"><a class="btn cv-link" href="cv.pdf" target="_blank" rel="noopener">Open CV</a></span>
+      </li>
+    </ul>
+  </section>
+  <section class="sec" id="press">
+    <p class="label">Press kit</p>
+    <h2 class="h2">The short version.</h2>
+    <p class="pk-note">Writing about SparkNews™ or Pocket Union™? Use any of these as they are. Each block copies with one click.</p>
+    <!-- EDIT HERE: update the text in each block below. Keep the id on each paragraph, because the Copy button uses it. -->
+    <ul class="pk">
+      <li class="pkr">
+        <span class="pk-l">One line</span>
+        <p class="pk-t" id="pk-one">Victor Stanovoy is the founder and CEO of SparkNews™, a student newspaper in multiple schools, and the creator of Pocket Union™.</p>
+        <span class="c-act"><button class="btn" type="button" data-copy="pk-one">Copy</button></span>
+      </li>
+      <li class="pkr">
+        <span class="pk-l">Short bio</span>
+        <p class="pk-t" id="pk-short">Victor Stanovoy is the founder and CEO of SparkNews™, a student newspaper that lives in more than one school, and the creator of Pocket Union™, a premium collection of notebooks and travel accessories designed for life in motion. He loves writing by hand.</p>
+        <span class="c-act"><button class="btn" type="button" data-copy="pk-short">Copy</button></span>
+      </li>
+      <li class="pkr">
+        <span class="pk-l">Long bio</span>
+        <p class="pk-t" id="pk-long">Victor Stanovoy is the founder and CEO of SparkNews™, a student newspaper that lives in more than one school. He is also the creator of Pocket Union™, a premium collection of thoughtfully made notebooks and travel accessories designed for life in motion. From the morning commute to journeys across the world, Pocket Union™ brings together refined design and everyday utility: objects made to carry, write, organise and keep close. Its notebooks are The Standard, The Meridian and The Commuter. Victor believes the objects we carry should be as considered as the moments we use them for, and he loves writing by hand.</p>
+        <span class="c-act"><button class="btn" type="button" data-copy="pk-long">Copy</button></span>
+      </li>
+      <li class="pkr">
+        <span class="pk-l">Key facts</span>
+        <p class="pk-t pre" id="pk-facts">Name: Victor Stanovoy
+Role: Founder and CEO, SparkNews™
+Also: Creator of Pocket Union™ (tagline: Excellence on the Go)
+Pocket Union™ notebooks: The Standard, The Meridian, The Commuter
+Contact: victor.stanovoy.mail@gmail.com</p>
+        <span class="c-act"><button class="btn" type="button" data-copy="pk-facts">Copy</button></span>
+      </li>
+    </ul>
+  </section>
+</main>
+
+<footer class="foot">
+  <p class="big">More soon.</p>
+  <p class="sub">Writing and photos of my handwriting are on the way.</p>
+  <div class="fine"><span>© 2026 Victor Stanovoy</span><a href="#press">Press kit</a><span>Founder &amp; CEO, SparkNews™</span></div>
+</footer>
+
+<script>
+(function(){
+  'use strict';
+  var root=document.documentElement;
+  var $=function(s,c){return (c||document).querySelector(s)};
+  var $$=function(s,c){return Array.prototype.slice.call((c||document).querySelectorAll(s))};
+  var reduce=matchMedia('(prefers-reduced-motion: reduce)').matches;
+  var fine=matchMedia('(hover: hover) and (pointer: fine)').matches;
+  var vh=innerHeight, cur=scrollY;
+  var mx=-9999,my=-9999,rx=0,ry=0,seen=false;
+
+  /* ---- split the name into letters ---- */
+  var letters=[], par=[], n=0;
+  $$('[data-split]').forEach(function(line){
+    var txt=line.textContent; line.textContent='';
+    txt.split('').forEach(function(c){
+      var o=document.createElement('span'); o.className='ch';
+      var i=document.createElement('span'); i.className='ci'; i.textContent=c; i.style.setProperty('--i',n);
+      o.appendChild(i); line.appendChild(o);
+      var sp=0.065*Math.sin(n*1.9)+0.01;
+      letters.push({el:o,w:400,last:400});
+      par.push({el:o,parent:line,speed:sp,ref:0,last:0});
+      n++;
+    });
+  });
+  $$('[data-speed]').forEach(function(el){
+    par.push({el:el,parent:el.parentElement,speed:parseFloat(el.getAttribute('data-speed'))||0,ref:0,last:0});
+  });
+
+  /* ---- marquee clones ---- */
+  var track=$('#track'), grp=$('.grp');
+  if(grp){for(var c=0;c<2;c++){var cl=grp.cloneNode(true);cl.setAttribute('aria-hidden','true');track.appendChild(cl);}}
+
+  /* ---- statement words ---- */
+  var st=$('#statement'), words=[], lastK=-1;
+  (function walk(node){
+    Array.prototype.slice.call(node.childNodes).forEach(function(ch){
+      if(ch.nodeType===3){
+        var frag=document.createDocumentFragment();
+        ch.textContent.split(/(\s+)/).forEach(function(p){
+          if(!p) return;
+          if(/^\s+$/.test(p)){frag.appendChild(document.createTextNode(p));}
+          else{var s=document.createElement('span');s.className='w';s.textContent=p;words.push(s);frag.appendChild(s);}
+        });
+        ch.parentNode.replaceChild(frag,ch);
+      }else if(ch.nodeType===1){walk(ch);}
+    });
+  })(st);
+
+  function measure(){
+    vh=innerHeight;
+    par.forEach(function(p){
+      var r=p.parent.getBoundingClientRect();
+      p.ref=Math.max(0,r.top+scrollY+r.height/2-vh/2);
+    });
+  }
+
+  /* ---- cursor ---- */
+  var dot=$('#curDot'), ring=$('#curRing'), box=$('#curBox'), lab=$('#curLabel');
+  var curS='', curL='';
+  if(fine){
+    root.classList.add('has-cursor');
+    document.addEventListener('pointermove',function(e){
+      if(e.pointerType==='touch') return;
+      mx=e.clientX; my=e.clientY;
+      if(!seen){seen=true;rx=mx;ry=my;}
+      root.classList.add('cursor-on');
+      var t=e.target.closest?e.target.closest('[data-cursor],a,button'):null;
+      var s='',l='';
+      if(t){l=t.getAttribute('data-cursor')||'';s=(l==='Write')?'write':(l?'label':'link');}
+      if(s!==curS||l!==curL){
+        curS=s;curL=l;
+        if(s) box.setAttribute('data-s',s); else box.removeAttribute('data-s');
+        lab.textContent=(s==='label')?l:'';
+      }
+    },{passive:true});
+    root.addEventListener('mouseleave',function(){root.classList.remove('cursor-on');mx=-9999;my=-9999;});
+    root.addEventListener('mouseenter',function(){if(seen) root.classList.add('cursor-on');});
+  }
+
+  /* ---- project popup ---- */
+  var tip=$('#tip'), tipOn=null;
+  function placeTip(x,y){
+    var w=tip.offsetWidth, h=tip.offsetHeight, px=x+56, py=y+22;
+    if(px+w>innerWidth-16) px=x-56-w;
+    if(px<16) px=16;
+    if(py+h>innerHeight-16) py=innerHeight-16-h;
+    if(py<16) py=16;
+    tip.style.transform='translate3d('+Math.round(px)+'px,'+Math.round(py)+'px,0)';
+  }
+  function openTip(el,x,y){
+    var d=$('.proj-desc',el); if(!d) return;
+    if(tipOn!==el){tipOn=el;tip.innerHTML=d.innerHTML;}
+    tip.classList.add('show');placeTip(x,y);
+  }
+  function closeTip(){tipOn=null;tip.classList.remove('show');}
+  if(fine){
+    $$('.proj').forEach(function(el){
+      el.addEventListener('pointerenter',function(e){if(e.pointerType!=='touch') openTip(el,e.clientX,e.clientY);});
+      el.addEventListener('pointermove',function(e){if(tipOn===el) placeTip(e.clientX,e.clientY);});
+      el.addEventListener('pointerleave',closeTip);
+      el.addEventListener('focus',function(){var r=el.getBoundingClientRect();openTip(el,r.left+r.width/2,r.top+r.height/2);});
+      el.addEventListener('blur',closeTip);
+    });
+    addEventListener('scroll',function(){
+      if(tipOn&&!tipOn.matches(':hover')&&document.activeElement!==tipOn) closeTip();
+    },{passive:true});
+  }
+
+  /* ---- frame loop ---- */
+  function frame(){
+    var sy=scrollY;
+    cur+=(sy-cur)*(reduce?1:0.12);
+    if(Math.abs(sy-cur)<0.05) cur=sy;
+
+    if(!reduce){
+      for(var i=0;i<par.length;i++){
+        var p=par[i], off=(cur-p.ref)*p.speed;
+        if(Math.abs(off-p.last)>0.05){
+          p.el.style.transform='translate3d(0,'+off.toFixed(2)+'px,0)';
+          p.last=off;
+        }
+      }
+      if(grp) track.style.transform='translate3d('+(-cur*0.35).toFixed(1)+'px,0,0)';
+    }
+
+    /* statement fill */
+    var r=st.getBoundingClientRect();
+    var prog=reduce?1:(vh*0.82-r.top)/(vh*0.82-vh*0.4+r.height);
+    prog=Math.max(0,Math.min(1,prog));
+    var k=Math.round(prog*words.length*1.05);
+    if(k!==lastK){
+      for(var j=0;j<words.length;j++){
+        if(j<k) words[j].classList.add('on'); else words[j].classList.remove('on');
+      }
+      lastK=k;
+    }
+
+    /* cursor */
+    if(fine&&seen){
+      var f=reduce?1:0.2;
+      rx+=(mx-rx)*f; ry+=(my-ry)*f;
+      dot.style.transform='translate3d('+mx+'px,'+my+'px,0) translate(-50%,-50%)';
+      ring.style.transform='translate3d('+rx.toFixed(1)+'px,'+ry.toFixed(1)+'px,0) translate(-50%,-50%)';
+    }
+
+    /* letters swell near the cursor */
+    if(fine&&!reduce&&sy<vh*1.2){
+      for(var q=0;q<letters.length;q++){
+        var L=letters[q], b=L.el.getBoundingClientRect();
+        var dx=b.left+b.width/2-mx, dy=b.top+b.height/2-my;
+        var t=Math.exp(-(dx*dx+dy*dy)/(2*170*170));
+        L.w+=(400+380*t-L.w)*0.14;
+        var rw=Math.round(L.w);
+        if(rw!==L.last){L.el.style.fontWeight=rw;L.last=rw;}
+      }
+    }
+    requestAnimationFrame(frame);
+  }
+
+  /* ---- writing pad ---- */
+  var pad=$('#pad'), cv=$('#cv'), ctx=cv.getContext('2d');
+  var undoB=$('#undo'), clearB=$('#clear');
+  var strokes=[], active=null, dpr=1;
+
+  function inkColor(){return getComputedStyle(root).getPropertyValue('--ink').trim()||'#0C1633';}
+  function mid(a,b){return {x:(a.x+b.x)/2,y:(a.y+b.y)/2};}
+  function seg(pts,i){
+    ctx.lineCap='round';ctx.lineJoin='round';
+    if(i===0){
+      ctx.beginPath();ctx.arc(pts[0].x,pts[0].y,pts[0].w/2,0,Math.PI*2);ctx.fill();return;
+    }
+    var a=i>=2?mid(pts[i-2],pts[i-1]):pts[i-1];
+    var b=i>=2?mid(pts[i-1],pts[i]):mid(pts[i-1],pts[i]);
+    ctx.beginPath();ctx.moveTo(a.x,a.y);
+    ctx.quadraticCurveTo(pts[i-1].x,pts[i-1].y,b.x,b.y);
+    ctx.lineWidth=pts[i-1].w;ctx.stroke();
+  }
+  function setStyle(){var c=inkColor();ctx.strokeStyle=c;ctx.fillStyle=c;}
+  function redraw(){
+    ctx.clearRect(0,0,cv.width/dpr,cv.height/dpr);
+    setStyle();
+    strokes.forEach(function(s){for(var i=0;i<s.length;i++) seg(s,i);});
+  }
+  function sync(){
+    var empty=strokes.length===0;
+    pad.setAttribute('data-empty',empty?'true':'false');
+    undoB.disabled=empty;clearB.disabled=empty;
+  }
+  function size(){
+    dpr=Math.min(window.devicePixelRatio||1,2);
+    var w=cv.clientWidth,h=cv.clientHeight;
+    cv.width=Math.round(w*dpr);cv.height=Math.round(h*dpr);
+    ctx.setTransform(dpr,0,0,dpr,0,0);
+    redraw();
+  }
+  function pos(e){var r=cv.getBoundingClientRect();return {x:e.clientX-r.left,y:e.clientY-r.top};}
+
+  cv.addEventListener('pointerdown',function(e){
+    if(e.pointerType==='mouse'&&e.button!==0) return;
+    e.preventDefault();
+    try{cv.setPointerCapture(e.pointerId);}catch(err){}
+    var p=pos(e);p.w=3.2;p.t=performance.now();
+    active=[p];strokes.push(active);setStyle();seg(active,0);sync();
+  });
+  cv.addEventListener('pointermove',function(e){
+    if(!active) return;
+    var p=pos(e),last=active[active.length-1];
+    var dx=p.x-last.x,dy=p.y-last.y,d=Math.sqrt(dx*dx+dy*dy);
+    if(d<1.5) return;
+    var now=performance.now(),sp=d/Math.max(1,now-last.t);
+    var target=Math.max(1.3,Math.min(4.6,4.6-sp*1.1));
+    p.w=last.w*0.7+target*0.3;p.t=now;
+    active.push(p);seg(active,active.length-1);
+  });
+  function end(){active=null;}
+  cv.addEventListener('pointerup',end);
+  cv.addEventListener('pointercancel',end);
+  undoB.addEventListener('click',function(){strokes.pop();redraw();sync();});
+  clearB.addEventListener('click',function(){strokes=[];redraw();sync();});
+
+  if(window.ResizeObserver){new ResizeObserver(size).observe(pad);}else{addEventListener('resize',size);}
+  try{matchMedia('(prefers-color-scheme: dark)').addEventListener('change',redraw);}catch(e){}
+  try{new MutationObserver(redraw).observe(root,{attributes:true,attributeFilter:['data-theme']});}catch(e){}
+
+  /* ---- copy buttons ---- */
+  $$('[data-copy]').forEach(function(b){
+    var label=b.textContent, timer;
+    b.addEventListener('click',function(){
+      var src=document.getElementById(b.getAttribute('data-copy')); if(!src) return;
+      function done(t){b.textContent=t;clearTimeout(timer);timer=setTimeout(function(){b.textContent=label;},1800);}
+      function pick(){var r=document.createRange();r.selectNodeContents(src);var s=getSelection();s.removeAllRanges();s.addRange(r);done('Selected');}
+      if(navigator.clipboard&&navigator.clipboard.writeText){
+        navigator.clipboard.writeText(src.textContent.trim()).then(function(){done('Copied');},pick);
+      }else{pick();}
+    });
+  });
+
+  /* ---- tab title: playful and follows the section you are reading; scrolls like a news ticker while you are away ---- */
+  /* EDIT HERE: add, remove or rewrite any line. Each section picks one line at random every time you reach it. */
+  var BASE='Victor Stanovoy';
+  var TITLES={
+    top:['Victor Stanovoy','Hi, I’m Victor 👋','Victor Stanovoy · Founder & CEO'],
+    spotlight:['Now showing 🎬','Fresh off the press 🗞️','Meet the projects'],
+    about:['Who’s this guy? 🤔','A little about Victor','The person behind the projects'],
+    sparknews:['Stop the presses! 🗞️','Extra! Extra! SparkNews™','Read all about it'],
+    pocketunion:['Pocket Union™ · Excellence on the Go 🎒','Made for the in-between','Connect. Reflect. Excel.'],
+    now:['Right now ⚡','What’s cooking 🍳','Live from the desk'],
+    projects:['Pocket Union™ loading… 🎒','Things in the works 🛠️','Excellence on the Go'],
+    articles:['Headlines 📰','Today’s reads','Worth a read'],
+    press:['For the record 🎙️','The short version','Press room'],
+    gallery:['Gallery night 🖼️','Exhibit A','Hand-picked 🤲'],
+    index:['The grand tour 🗺️','Browsing, are we?','Choose your own adventure'],
+    pen:['Doodle break 🎨','Go on, make a mark','Free canvas'],
+    contact:['Say hello 👋','Let’s talk 💬','Slide into my inbox 📬']
+  };
+  /* the ticker: these headlines scroll across the tab title while this tab is in the background.
+     TICKER_WIDTH is how many characters show at once, TICKER_MS is how fast it moves (lower is faster).
+     Browsers slow background timers down, so on some browsers the ticker moves in slower steps. */
+  var TICKER=[
+    'SparkNews™ · student news across multiple schools',
+    'Pocket Union™ · Excellence on the Go',
+    'Connect. Reflect. Excel.',
+    'Victor Stanovoy · Founder & CEO',
+    'Come back soon'
+  ];
+  var TICKER_SEP='   ✦   ', TICKER_WIDTH=34, TICKER_MS=300;
+  var WELCOME='Welcome back! 👋';
+  var curId='top', typeTimer=null, tickTimer=null;
+  function pick(a){return a[Math.floor(Math.random()*a.length)];}
+  function typeTitle(text){
+    clearInterval(typeTimer);
+    if(reduce){document.title=text;return;}
+    var chars=Array.from(text), i=0;
+    typeTimer=setInterval(function(){
+      i++;
+      document.title=chars.slice(0,i).join('')+(i<chars.length?'▍':'');
+      if(i>=chars.length) clearInterval(typeTimer);
+    },45);
+  }
+  function setSection(id){
+    curId=id; setActive(id);
+    if(document.hidden) return;
+    typeTitle(pick(TITLES[id]||[BASE]));
+  }
+  /* Browsers slow down and eventually pause ordinary timers in background tabs, which made the ticker crawl and stop.
+     So the beat comes from a tiny Web Worker (workers are throttled far less), and the position is worked out from the
+     clock, so even a late beat lands in the right place instead of falling behind. */
+  var tickWorker=null;
+  function stopTicker(){
+    clearInterval(tickTimer);tickTimer=null;
+    if(tickWorker){try{tickWorker.postMessage('stop');tickWorker.terminate();}catch(e){} tickWorker=null;}
+  }
+  function startTicker(){
+    stopTicker();
+    if(reduce){document.title='Come back soon · '+BASE;return;}
+    var chars=Array.from(TICKER.join(TICKER_SEP)+TICKER_SEP), n=chars.length, t0=Date.now();
+    function step(){
+      var pos=Math.floor((Date.now()-t0)/TICKER_MS)%n, out='';
+      for(var i=0;i<TICKER_WIDTH;i++) out+=chars[(pos+i)%n];
+      if(document.title!==out) document.title=out;
+    }
+    step();
+    try{
+      var src='var t=0;onmessage=function(e){clearInterval(t);if(e.data!=="stop")t=setInterval(function(){postMessage(1)},e.data)}';
+      var url=URL.createObjectURL(new Blob([src],{type:'text/javascript'}));
+      tickWorker=new Worker(url); URL.revokeObjectURL(url);
+      tickWorker.onmessage=step;
+      tickWorker.postMessage(TICKER_MS);
+    }catch(e){
+      tickWorker=null; tickTimer=setInterval(step,TICKER_MS);
+    }
+  }
+  document.addEventListener('visibilitychange',function(){
+    clearInterval(typeTimer);
+    if(document.hidden){
+      startTicker();
+    }else{
+      stopTicker();
+      document.title=WELCOME;
+      setTimeout(function(){ if(!document.hidden) typeTitle(pick(TITLES[curId]||[BASE])); },1800);
+    }
+  });
+  if('IntersectionObserver' in window){
+    var tio=new IntersectionObserver(function(entries){
+      entries.forEach(function(en){ if(en.isIntersecting) setSection(en.target.id); });
+    },{rootMargin:'-45% 0px -50% 0px'});
+    Object.keys(TITLES).forEach(function(id){ var s=document.getElementById(id); if(s) tio.observe(s); });
+  }
+
+  /* ---- CV: shows up by itself when a file named cv.pdf (or resume.pdf) sits next to this page ---- */
+  var CV_FILES=['cv.pdf','resume.pdf'];
+  function showCv(name){
+    $$('.cv-link').forEach(function(a){a.href=name;});
+    $$('.cv-row').forEach(function(r){r.hidden=false;});
+  }
+  (function probe(i){
+    if(i>=CV_FILES.length||!window.fetch) return;
+    fetch(CV_FILES[i],{method:'HEAD'}).then(function(r){
+      if(r.ok) showCv(CV_FILES[i]); else probe(i+1);
+    }).catch(function(){});
+  })(0);
+
+  /* ---- Pocket Union editions ---- */
+  /* EDIT HERE: the three notebook editions. To rename one, change its name here AND its tab label in the HTML above. */
+  var EDITIONS=[
+    {name:'The Standard', line:'The one you reach for every day.',
+     desc:'An A5 notebook that lies flat on the table, so your hand never fights the spine. Room for long, unhurried entries and the thinking that comes with them.',
+     format:'A5, lay-flat binding', built:'Longer sessions at a café table'},
+    {name:'The Meridian', line:'A line through every journey.',
+     desc:'A travel journal for the long way round. Keep the boarding pass, the receipt and the thought you had at thirty thousand feet in one place.',
+     format:'Travel journal, ticket pocket', built:'Planes, trains and trips'},
+    {name:'The Commuter', line:'Small enough for the in-between.',
+     desc:'A slim pocket notebook with a soft cover that bends into a jacket pocket. Made for the few quiet minutes between one stop and the next.',
+     format:'Pocket size, soft cover', built:'The subway and the daily commute'}
+  ];
+  var nb=$('#nb'), edTabs=$$('.tab'), edIdx=0, edAuto=null;
+  function showEd(i){
+    edIdx=i; var e=EDITIONS[i];
+    nb.setAttribute('data-ed',i);
+    $('#nbName').textContent=e.name;
+    $('#edName').textContent=e.name;
+    $('#edLine').textContent=e.line;
+    $('#edDesc').textContent=e.desc;
+    $('#edFormat').textContent=e.format;
+    $('#edFor').textContent=e.built;
+    $('#edPanel').setAttribute('aria-labelledby','tab'+i);
+    edTabs.forEach(function(t,k){
+      t.setAttribute('aria-selected',k===i?'true':'false');
+      t.tabIndex=k===i?0:-1;
+    });
+  }
+  function stopAuto(){ if(edAuto){clearInterval(edAuto);edAuto=null;} }
+  edTabs.forEach(function(t,k){
+    t.addEventListener('click',function(){stopAuto();showEd(k);});
+    t.addEventListener('keydown',function(e){
+      var d=e.key==='ArrowRight'?1:e.key==='ArrowLeft'?-1:0; if(!d) return;
+      e.preventDefault(); stopAuto();
+      var j=(k+d+edTabs.length)%edTabs.length; showEd(j); edTabs[j].focus();
+    });
+  });
+  if(!reduce){ edAuto=setInterval(function(){showEd((edIdx+1)%EDITIONS.length);},4200); }
+  var puVis=$('#puVisual');
+  if(fine&&!reduce){
+    puVis.addEventListener('pointermove',function(e){
+      var r=puVis.getBoundingClientRect();
+      var px=(e.clientX-r.left)/r.width-.5, py=(e.clientY-r.top)/r.height-.5;
+      nb.style.setProperty('--ry',(-10+px*22).toFixed(1)+'deg');
+      nb.style.setProperty('--rx',(4-py*18).toFixed(1)+'deg');
+    });
+    puVis.addEventListener('pointerleave',function(){nb.style.removeProperty('--ry');nb.style.removeProperty('--rx');});
+  }
+
+  /* ---- Connect. Reflect. Excel. lights up as you scroll ---- */
+  var rits=$$('.rit');
+  if(reduce||!('IntersectionObserver' in window)){
+    rits.forEach(function(r){r.classList.add('on');});
+  }else{
+    var rio=new IntersectionObserver(function(entries){
+      entries.forEach(function(en){ en.target.classList.toggle('on',en.isIntersecting); });
+    },{rootMargin:'-30% 0px -30% 0px'});
+    rits.forEach(function(r){rio.observe(r);});
+  }
+
+  /* ---- Now cards: glow follows the cursor ---- */
+  $$('.nowc').forEach(function(c){
+    c.addEventListener('pointermove',function(e){
+      var r=c.getBoundingClientRect();
+      c.style.setProperty('--mx',(e.clientX-r.left)+'px');
+      c.style.setProperty('--my',(e.clientY-r.top)+'px');
+    });
+  });
+
+  /* ---- name your notebook ---- */
+  var nbInput=$('#nbInput'), nbOwner=$('#nbOwner'), nbOwnerWrap=$('#nbOwnerWrap'), nbClear=$('#nbClear'), nbCta=$('#nbCta');
+  function setOwner(raw,save){
+    var v=String(raw||'').replace(/\s+/g,' ').trim().slice(0,18);
+    nbOwner.textContent=v;
+    nbOwnerWrap.hidden=!v; nbClear.hidden=!v; nbCta.hidden=!v;
+    nb.setAttribute('aria-label','Pocket Union notebook cover'+(v?', belonging to '+v:''));
+    if(save){ try{localStorage.setItem('pu-owner',v);}catch(e){} }
+  }
+  nbInput.addEventListener('input',function(){ stopAuto(); setOwner(nbInput.value,true); });
+  nbClear.addEventListener('click',function(){ nbInput.value=''; setOwner('',true); nbInput.focus(); });
+  try{ var savedOwner=localStorage.getItem('pu-owner'); if(savedOwner){ nbInput.value=savedOwner; setOwner(savedOwner,false); stopAuto(); } }catch(e){}
+
+  /* ---- menu, scroll lock and the highlighted section ---- */
+  var menu=$('#menu'), menuBtn=$('#menuBtn'), menuFrom=null, locks=0;
+  function lock(on){ locks=Math.max(0,locks+(on?1:-1)); root.style.overflow=locks?'hidden':''; }
+  function trap(e,box){
+    if(e.key!=='Tab') return;
+    var f=$$('a,button',box).filter(function(x){return x.offsetParent!==null;});
+    if(!f.length) return;
+    var a=f[0], z=f[f.length-1];
+    if(e.shiftKey&&document.activeElement===a){e.preventDefault();z.focus();}
+    else if(!e.shiftKey&&document.activeElement===z){e.preventDefault();a.focus();}
+  }
+  function openMenu(){
+    if(!menu.hidden) return;
+    menuFrom=document.activeElement; menu.hidden=false; lock(true);
+    menuBtn.setAttribute('aria-expanded','true');
+    var f=$('.menu-list a',menu); if(f) f.focus();
+  }
+  function closeMenu(){
+    if(menu.hidden) return;
+    menu.hidden=true; lock(false);
+    menuBtn.setAttribute('aria-expanded','false');
+    if(menuFrom&&menuFrom.focus) menuFrom.focus();
+  }
+  menuBtn.addEventListener('click',function(){ if(menu.hidden) openMenu(); else closeMenu(); });
+  $('#menuClose').addEventListener('click',closeMenu);
+  $$('.menu-list a',menu).forEach(function(a){ a.addEventListener('click',closeMenu); });
+  menu.addEventListener('keydown',function(e){ if(e.key==='Escape'){closeMenu();return;} trap(e,menu); });
+  function setActive(id){
+    $$('[data-sec]').forEach(function(a){
+      var on=a.getAttribute('data-sec')===id;
+      if(a.closest('.menu')){ if(on) a.setAttribute('aria-current','true'); else a.removeAttribute('aria-current'); }
+      else a.classList.toggle('on',on);
+    });
+  }
+
+  /* ---- handwriting gallery: finds handwriting-1, handwriting-2 … next to this file ---- */
+  /* EDIT HERE: HAND_CAPTIONS is optional. Add a line of text per photo, in order, to caption it in the viewer. */
+  var HAND_MAX=24, HAND_EXT=['jpg','jpeg','png','webp'], HAND_CAPTIONS=[];
+  var handFiles=[], lb=$('#lb'), lbImg=$('#lbImg'), lbCap=$('#lbCap'), lbIdx=0, lbFrom=null;
+  function lbShow(i){
+    lbIdx=(i+handFiles.length)%handFiles.length;
+    lbImg.src=handFiles[lbIdx]; lbImg.alt='Handwriting sample '+(lbIdx+1);
+    lbCap.textContent=HAND_CAPTIONS[lbIdx]||('Sample '+(lbIdx+1)+' of '+handFiles.length);
+  }
+  function lbOpen(i){
+    lbFrom=document.activeElement; lbShow(i);
+    $('#lbPrev').hidden=$('#lbNext').hidden=handFiles.length<2;
+    lb.hidden=false; lock(true); $('#lbX').focus();
+  }
+  function lbClose(){
+    if(lb.hidden) return;
+    lb.hidden=true; lock(false); lbImg.removeAttribute('src');
+    if(lbFrom&&lbFrom.focus) lbFrom.focus();
+  }
+  $('#lbX').addEventListener('click',lbClose);
+  $('#lbPrev').addEventListener('click',function(){lbShow(lbIdx-1);});
+  $('#lbNext').addEventListener('click',function(){lbShow(lbIdx+1);});
+  lb.addEventListener('click',function(e){ if(e.target===lb) lbClose(); });
+  lb.addEventListener('keydown',function(e){
+    if(e.key==='Escape') lbClose();
+    else if(e.key==='ArrowLeft') lbShow(lbIdx-1);
+    else if(e.key==='ArrowRight') lbShow(lbIdx+1);
+    else trap(e,lb);
+  });
+  function showHand(){
+    if(!handFiles.length) return;
+    var ul=$('#hg');
+    handFiles.forEach(function(src,i){
+      var li=document.createElement('li'), b=document.createElement('button'), im=document.createElement('img');
+      b.type='button'; b.setAttribute('data-cursor','View'); b.setAttribute('aria-label','Open handwriting sample '+(i+1));
+      im.src=src; im.alt=''; im.loading='lazy';
+      b.appendChild(im); li.appendChild(b); ul.appendChild(li);
+      b.addEventListener('click',function(){lbOpen(i);});
+    });
+    $('#gallery').hidden=false;
+    $$('.hand-row').forEach(function(r){r.hidden=false;});
+    measure();
+  }
+  (function probe(n){
+    if(n>HAND_MAX){showHand();return;}
+    (function tryExt(i){
+      if(i>=HAND_EXT.length){showHand();return;}
+      var im=new Image(), name='handwriting-'+n+'.'+HAND_EXT[i];
+      im.onload=function(){handFiles.push(name);probe(n+1);};
+      im.onerror=function(){tryExt(i+1);};
+      im.src=name;
+    })(0);
+  })(1);
+
+  /* ---- theme toggle: light or dark, remembered on this device ---- */
+  var themeBtn=$('#themeBtn');
+  var ICON_SUN='<svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="4"/><path d="M12 2v2M12 20v2M2 12h2M20 12h2M4.9 4.9l1.4 1.4M17.7 17.7l1.4 1.4M4.9 19.1l1.4-1.4M17.7 6.3l1.4-1.4"/></svg>';
+  var ICON_MOON='<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M21 12.8A9 9 0 1 1 11.2 3a7 7 0 0 0 9.8 9.8z"/></svg>';
+  function currentTheme(){
+    var t=root.getAttribute('data-theme');
+    if(t==='dark'||t==='light') return t;
+    return matchMedia('(prefers-color-scheme: dark)').matches?'dark':'light';
+  }
+  function paintTheme(){
+    var dark=currentTheme()==='dark';
+    themeBtn.innerHTML=dark?ICON_SUN:ICON_MOON;
+    themeBtn.setAttribute('aria-label',dark?'Switch to light theme':'Switch to dark theme');
+  }
+  themeBtn.addEventListener('click',function(){
+    var next=currentTheme()==='dark'?'light':'dark';
+    root.setAttribute('data-theme',next);
+    try{localStorage.setItem('theme-pref',next);}catch(e){}
+    paintTheme();
+  });
+  paintTheme();
+  try{matchMedia('(prefers-color-scheme: dark)').addEventListener('change',paintTheme);}catch(e){}
+  try{new MutationObserver(paintTheme).observe(root,{attributes:true,attributeFilter:['data-theme']});}catch(e){}
+
+  /* ---- scroll progress: the thin line under the top bar ---- */
+  var barEl=$('.bar'), barBusy=false;
+  function barProgress(){
+    barBusy=false;
+    var h=document.documentElement.scrollHeight-innerHeight;
+    barEl.style.setProperty('--p',h>0?Math.min(1,Math.max(0,scrollY/h)).toFixed(4):'0');
+  }
+  addEventListener('scroll',function(){ if(!barBusy){barBusy=true;requestAnimationFrame(barProgress);} },{passive:true});
+  addEventListener('resize',barProgress);
+  barProgress();
+
+  /* ---- Articles ---- */
+  /* EDIT HERE: add your articles to this list, newest first. Copy one block per article and keep the comma after it.
+     Only title and url are needed. source, date (as 2026-10-01) and summary are optional.
+       {title:'Your headline', url:'https://example.com/your-article', source:'SparkNews™', date:'2026-10-01', summary:'One or two sentences about the piece.'},
+     Replace the example and delete this note when you add the first real one. */
+  var ARTICLES=[
+  ];
+  (function renderArticles(){
+    var list=$('#artList'), empty=$('#artEmpty'), count=$('#artCount');
+    if(!ARTICLES.length) return;
+    function safeUrl(u){
+      u=String(u||'').trim();
+      if(/^[a-z][a-z0-9+.-]*:/i.test(u)&&!/^https?:/i.test(u)) return '#';
+      return u||'#';
+    }
+    function nice(d){
+      if(!d) return '';
+      if(/^\d{4}-\d{2}-\d{2}$/.test(d)){
+        var t=new Date(d+'T00:00:00');
+        if(!isNaN(t)) return t.toLocaleDateString(undefined,{year:'numeric',month:'short',day:'numeric'});
+      }
+      return String(d);
+    }
+    ARTICLES.forEach(function(a){
+      if(!a||!a.title) return;
+      var li=document.createElement('li'), el=document.createElement('a');
+      var url=safeUrl(a.url);
+      el.className='art'; el.href=url; el.setAttribute('data-cursor','Read');
+      if(/^https?:/i.test(url)){ el.target='_blank'; el.rel='noopener'; }
+      var dt=document.createElement('span'); dt.className='art-date'; dt.textContent=nice(a.date);
+      var main=document.createElement('div'); main.className='art-main';
+      if(a.source){ var s=document.createElement('span'); s.className='art-src'; s.textContent=a.source; main.appendChild(s); }
+      var h=document.createElement('h3'); h.className='art-title'; h.textContent=a.title; main.appendChild(h);
+      if(a.summary){ var p=document.createElement('p'); p.className='art-dek'; p.textContent=a.summary; main.appendChild(p); }
+      el.appendChild(dt); el.appendChild(main);
+      el.insertAdjacentHTML('beforeend','<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M7 17L17 7M8 7h9v9"/></svg>');
+      li.appendChild(el); list.appendChild(li);
+    });
+    var n=list.children.length;
+    if(!n) return;
+    empty.hidden=true; list.hidden=false;
+    count.textContent=n+(n===1?' piece':' pieces'); count.hidden=false;
+  })();
+
+  /* ---- easter egg: type "ink" anywhere (or double-tap the notebook) and the cursor becomes a pen ---- */
+  var inkCv=$('#inkCv'), inkCtx=inkCv.getContext('2d'), inkBanner=$('#inkBanner');
+  var INK_LIFE=2200, inkOn=false, inkPts=[], inkRaf=0, inkTimer=0, inkCol='#2F3DF2', inkW=0, inkH=0, inkKeys='';
+  function inkSize(){
+    var d=Math.min(window.devicePixelRatio||1,2);
+    inkW=innerWidth; inkH=innerHeight;
+    inkCv.width=Math.round(inkW*d); inkCv.height=Math.round(inkH*d);
+    inkCtx.setTransform(d,0,0,d,0,0);
+  }
+  function inkSay(text){
+    inkBanner.textContent=text; inkBanner.classList.add('show');
+    clearTimeout(inkTimer); inkTimer=setTimeout(function(){inkBanner.classList.remove('show');},3800);
+  }
+  function inkAdd(e){
+    if(!inkOn) return;
+    var now=performance.now(), p={x:e.clientX,y:e.clientY,t:now,w:3}, l=inkPts[inkPts.length-1];
+    if(l){
+      var dx=p.x-l.x, dy=p.y-l.y, d=Math.sqrt(dx*dx+dy*dy);
+      if(d<2) return;
+      var sp=d/Math.max(1,now-l.t);
+      p.w=l.w*0.7+Math.max(1.2,Math.min(5,5-sp*1.2))*0.3;
+    }
+    inkPts.push(p);
+  }
+  function inkFrame(now){
+    if(!inkOn&&!inkPts.length){inkRaf=0;inkCtx.clearRect(0,0,inkW,inkH);return;}
+    inkCtx.clearRect(0,0,inkW,inkH);
+    while(inkPts.length&&now-inkPts[0].t>INK_LIFE) inkPts.shift();
+    inkCtx.lineCap='round'; inkCtx.lineJoin='round'; inkCtx.strokeStyle=inkCol;
+    for(var i=1;i<inkPts.length;i++){
+      var a=inkPts[i-1], b=inkPts[i];
+      if(b.t-a.t>120) continue;
+      inkCtx.globalAlpha=Math.max(0,1-(now-b.t)/INK_LIFE);
+      inkCtx.lineWidth=b.w;
+      inkCtx.beginPath(); inkCtx.moveTo(a.x,a.y); inkCtx.lineTo(b.x,b.y); inkCtx.stroke();
+    }
+    inkCtx.globalAlpha=1;
+    inkRaf=requestAnimationFrame(inkFrame);
+  }
+  function setInk(on){
+    if(on===inkOn) return;
+    inkOn=on; root.classList.toggle('ink',on);
+    if(on){
+      inkCol=getComputedStyle(root).getPropertyValue('--accent').trim()||'#2F3DF2';
+      inkSize(); inkSay('You found the ink. Write anywhere ✒️');
+      if(!inkRaf) inkRaf=requestAnimationFrame(inkFrame);
+    }else{
+      inkPts=[]; inkSay('Ink’s dry. Until next time.');
+    }
+  }
+  document.addEventListener('pointermove',inkAdd,{passive:true});
+  addEventListener('resize',function(){if(inkOn) inkSize();});
+  document.addEventListener('keydown',function(e){
+    if(e.key==='Escape'){setInk(false);return;}
+    var t=e.target; if(t&&(t.isContentEditable||/^(INPUT|TEXTAREA|SELECT)$/.test(t.tagName))) return;
+    if(e.key.length!==1||e.metaKey||e.ctrlKey||e.altKey) return;
+    inkKeys=(inkKeys+e.key.toLowerCase()).slice(-3);
+    if(inkKeys==='ink'){inkKeys='';setInk(!inkOn);}
+  });
+  var lastTap=0;
+  nb.addEventListener('pointerup',function(){
+    var n=Date.now();
+    if(n-lastTap<380){lastTap=0;setInk(!inkOn);} else lastTap=n;
+  });
+  try{console.log('%cPsst… type “ink” anywhere on the page.','font:italic 16px Georgia,serif;color:#2F3DF2');}catch(e){}
+
+  /* ---- boot ---- */
+  size();measure();
+  addEventListener('resize',measure);
+  addEventListener('load',measure);
+  if(document.fonts&&document.fonts.ready){document.fonts.ready.then(function(){measure();size();});}
+  requestAnimationFrame(frame);
+})();
+</script>
+
+</body></html>
