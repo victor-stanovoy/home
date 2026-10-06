@@ -5,9 +5,11 @@
 <script>
 /* FAVICON
    To set your tab icon, add an image named favicon.png (or favicon.svg, .jpg, .jpeg, .webp) to the same folder as this file.
-   The page finds it, crops it to a square, rounds the corners and uses it as the browser tab icon.
+   To show a different icon when the browser is in dark mode, add favicon-dark.png (or .svg, .jpg, .jpeg, .webp) as well.
+   The page crops each one to a square, rounds the corners and uses it as the browser tab icon, and switches by itself
+   when the browser changes between light and dark. With no favicon-dark file, the normal icon is used in both.
    If the image has a transparent background, it is used as it is, with no rounding.
-   If no image is there, it draws a "VS" monogram instead.
+   If no image is there, it draws a "VS" monogram instead (dark blue on light, soft blue on dark).
    RADIUS is the corner size as a fraction of the icon: 0 is square, 0.22 is soft, 0.5 is a circle. */
 (function(){
   /* opening moment: the departure board plays once per visit, and never for people who asked for reduced motion.
@@ -23,7 +25,7 @@
   }catch(e){ document.documentElement.classList.add('no-intro'); }
   /* apply a saved light/dark choice straight away, so the page never flashes the wrong theme */
   try{var savedTheme=localStorage.getItem('theme-pref'); if(savedTheme==='light'||savedTheme==='dark') document.documentElement.setAttribute('data-theme',savedTheme);}catch(e){}
-  var NAMES=['favicon.png','favicon.svg','favicon.jpg','favicon.jpeg','favicon.webp'];
+  var EXTS=['png','svg','jpg','jpeg','webp'];
   var SIZE=256, RADIUS=0.22;
   function setIcon(href){
     var old=document.querySelectorAll('link[rel~="icon"]');
@@ -46,30 +48,49 @@
     for(var i=3;i<d.length;i+=4){ if(d[i]<250) n++; }
     return n>SIZE*SIZE*0.005;
   }
-  function monogram(x){
-    x.fillStyle='#2F3DF2'; x.fillRect(0,0,SIZE,SIZE);
-    x.fillStyle='#ffffff'; x.font='700 128px "Helvetica Neue",Arial,sans-serif';
-    x.textAlign='center'; x.textBaseline='middle'; x.fillText('VS',SIZE/2,SIZE/2+8);
-  }
-  function tryName(i){
-    if(i>=NAMES.length){ try{ setIcon(render(monogram)); }catch(e){} return; }
-    var img=new Image();
-    img.onload=function(){
-      var url;
-      try{
-        var w=img.naturalWidth||SIZE, h=img.naturalHeight||SIZE, s=Math.min(w,h);
-        var crop=function(x){ x.drawImage(img,(w-s)/2,(h-s)/2,s,s,0,0,SIZE,SIZE); };
-        var c=document.createElement('canvas'); c.width=c.height=SIZE;
-        var x0=c.getContext('2d'); crop(x0);
-        /* a transparent image keeps its own shape, so only opaque images get rounded corners */
-        url=hasTransparency(x0) ? c.toDataURL('image/png') : render(crop);
-      }catch(e){ url=img.src; }
-      setIcon(url);
+  function monogram(dark){
+    return function(x){
+      x.fillStyle=dark?'#8C9BFF':'#2F3DF2'; x.fillRect(0,0,SIZE,SIZE);
+      x.fillStyle=dark?'#0A0E1F':'#ffffff'; x.font='700 128px "Helvetica Neue",Arial,sans-serif';
+      x.textAlign='center'; x.textBaseline='middle'; x.fillText('VS',SIZE/2,SIZE/2+8);
     };
-    img.onerror=function(){ tryName(i+1); };
-    img.src=NAMES[i];
   }
-  tryName(0);
+  function loadIcon(prefix,done){
+    (function tryName(i){
+      if(i>=EXTS.length){ done(null); return; }
+      var img=new Image();
+      img.onload=function(){
+        var url;
+        try{
+          var w=img.naturalWidth||SIZE, h=img.naturalHeight||SIZE, s=Math.min(w,h);
+          var crop=function(x){ x.drawImage(img,(w-s)/2,(h-s)/2,s,s,0,0,SIZE,SIZE); };
+          var c=document.createElement('canvas'); c.width=c.height=SIZE;
+          var x0=c.getContext('2d'); crop(x0);
+          /* a transparent image keeps its own shape, so only opaque images get rounded corners */
+          url=hasTransparency(x0) ? c.toDataURL('image/png') : render(crop);
+        }catch(e){ url=img.src; }
+        done(url);
+      };
+      img.onerror=function(){ tryName(i+1); };
+      img.src=prefix+'.'+EXTS[i];
+    })(0);
+  }
+  var iconLight=null, iconDark=null, mq=null;
+  try{ mq=matchMedia('(prefers-color-scheme: dark)'); }catch(e){}
+  function applyIcon(){
+    var u=(mq&&mq.matches&&iconDark)?iconDark:iconLight;
+    if(u) setIcon(u);
+  }
+  loadIcon('favicon',function(light){
+    loadIcon('favicon-dark',function(dark){
+      try{
+        iconLight=light||render(monogram(false));
+        iconDark=dark||(light?null:render(monogram(true)));
+      }catch(e){}
+      applyIcon();
+    });
+  });
+  try{ if(mq) mq.addEventListener('change',applyIcon); }catch(e){}
 })();
 </script>
 <style>
@@ -123,10 +144,10 @@ html.intro-on .ci{animation-play-state:paused}
   background:#0A0E1F;color:#E9ECF8;transition:transform .85s cubic-bezier(.7,0,.2,1);
 }
 .intro.out{transform:translateY(-101%)}
-.intro-in{width:100%;max-width:64rem;min-width:0}
-.intro-k{margin:0 0 1.25rem;font:500 .75rem/1 var(--f-mono);text-transform:uppercase;letter-spacing:.2em;color:#8C9BFF}
-.intro-board{display:grid;gap:clamp(.45rem,1.2vw,.9rem)}
-.fl-row{display:flex;gap:.16em;font-size:min(calc((100vw - 2 * var(--gutter)) / 15.6),4.2rem)}
+.intro-in{width:100%;max-width:96rem;min-width:0}
+.intro-k{margin:0 0 clamp(1.25rem,3vw,2.25rem);font:500 clamp(.8rem,1.3vw,1.05rem)/1 var(--f-mono);text-transform:uppercase;letter-spacing:.22em;color:#8C9BFF}
+.intro-board{display:grid;gap:clamp(.5rem,1.6vw,1.3rem)}
+.fl-row{display:flex;gap:.16em;font-size:min(calc((100vw - 2 * var(--gutter)) / 14.6),7.4rem,calc((100vh - 16rem) / 5.6))}
 .fl{
   position:relative;display:inline-grid;place-items:center;flex:none;width:.78em;height:1.22em;overflow:hidden;
   border-radius:.1em;background:#151B3D;font:600 1em/1 var(--f-mono);color:#E9ECF8;
@@ -137,7 +158,7 @@ html.intro-on .ci{animation-play-state:paused}
 .fl.flip{animation:flap .13s linear infinite;color:#9AA3C7}
 @keyframes flap{50%{transform:scaleY(.2)}}
 .intro-foot{
-  margin:1.5rem 0 0;font:300 clamp(1.2rem,3vw,2.2rem)/1 var(--f-display);letter-spacing:-.02em;color:#8C9BFF;
+  margin:clamp(1.5rem,3vw,2.5rem) 0 0;font:300 clamp(1.6rem,4.6vw,3.8rem)/1 var(--f-display);letter-spacing:-.02em;color:#8C9BFF;
   opacity:0;transform:translateY(8px);transition:opacity .5s ease,transform .5s ease;
 }
 .intro-foot.on{opacity:1;transform:none}
@@ -510,6 +531,35 @@ html.intro-on .ci{animation-play-state:paused}
 
 .menu-foot-row{display:flex;justify-content:space-between;align-items:center;gap:1rem;flex-wrap:wrap;margin-top:2rem}
 
+/* easter egg: title studio */
+.ts{
+  position:fixed;left:var(--gutter);bottom:calc(env(safe-area-inset-bottom,0px) + 1rem);z-index:97;
+  width:min(26rem,calc(100vw - 2 * var(--gutter)));padding:1rem;display:grid;gap:.8rem;
+  background:var(--surface);color:var(--ink);border:1px solid var(--ink);
+  box-shadow:0 24px 50px -20px color-mix(in srgb,var(--ink) 55%,transparent);
+}
+.ts-h{display:flex;justify-content:space-between;align-items:center;font:500 .75rem/1 var(--f-mono);text-transform:uppercase;letter-spacing:.14em}
+.ts-x{width:2rem;height:2rem;border:1px solid var(--line);background:transparent;color:var(--ink);font:400 1.2rem/1 var(--f-body);padding:0}
+.ts-x:hover{background:var(--ink);color:var(--bg);border-color:var(--ink)}
+.ts-tab{
+  display:flex;align-items:center;gap:.55rem;min-width:0;padding:.55rem .8rem;border:1px solid var(--line);border-radius:.6rem .6rem 0 0;
+  background:var(--bg);font:400 .8rem/1.2 var(--f-body);
+}
+.ts-tab img{flex:none;width:16px;height:16px;border-radius:3px}
+.ts-tab span{min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.ts-f{display:flex;gap:.5rem}
+.ts-f input{
+  flex:1 1 auto;min-width:0;padding:.7rem .8rem;border:1px solid var(--line);background:var(--bg);color:var(--ink);font:400 1rem/1.2 var(--f-body);border-radius:0;
+}
+.ts-f input:hover,.ts-f input:focus{border-color:var(--ink)}
+.ts-fx{display:flex;flex-wrap:wrap;gap:.4rem}
+.ts-fx button{
+  padding:.5rem .7rem;border:1px solid var(--line);background:transparent;color:var(--ink);
+  font:500 .7rem/1 var(--f-mono);text-transform:uppercase;letter-spacing:.08em;
+}
+.ts-fx button:hover{border-color:var(--ink)}
+.ts-fx button[aria-pressed="true"]{background:var(--ink);color:var(--bg);border-color:var(--ink)}
+.ts-b{display:flex;gap:.5rem;flex-wrap:wrap}
 /* easter egg: ink mode */
 .ink-cv{position:fixed;inset:0;width:100%;height:100%;pointer-events:none;z-index:95;display:none}
 html.ink .ink-cv{display:block}
@@ -778,6 +828,16 @@ html.has-cursor,html.has-cursor *{cursor:none!important}
 <div class="tip" id="tip" aria-hidden="true"></div>
 <canvas class="ink-cv" id="inkCv" aria-hidden="true"></canvas>
 <div class="ink-banner" id="inkBanner" role="status"></div>
+<div class="ts" id="ts" role="dialog" aria-label="Tab title studio" hidden>
+  <div class="ts-h"><b>Title studio</b><button class="ts-x" id="tsX" type="button" aria-label="Close title studio">×</button></div>
+  <div class="ts-tab" aria-hidden="true"><img id="tsFav" alt="" width="16" height="16"><span id="tsPrev"></span></div>
+  <form class="ts-f" id="tsF">
+    <input id="tsIn" type="text" maxlength="60" placeholder="Name your tab…" autocomplete="off" spellcheck="false" aria-label="New tab title">
+    <button class="btn" type="submit">Set</button>
+  </form>
+  <div class="ts-fx" id="tsFx" role="group" aria-label="Effects"></div>
+  <div class="ts-b"><button class="btn" id="tsRand" type="button">Surprise me</button><button class="btn" id="tsAuto" type="button">Back to auto</button></div>
+</div>
 
 <div class="menu" id="menu" role="dialog" aria-modal="true" aria-label="Site menu" hidden>
   <div class="menu-top">
@@ -1405,7 +1465,7 @@ Contact: victor.stanovoy.mail@gmail.com</p>
   /* EDIT HERE: add, remove or rewrite any line. Each section picks one line at random every time you reach it. */
   var BASE='Victor Stanovoy';
   var TITLES={
-    top:['Victor Stanovoy','Hi, I’m Victor 👋','Victor Stanovoy · Founder & CEO'],
+    top:['Victor Stanovoy','Hi, I’m Victor 👋','Victor Stanovoy · Founder & CEO','Psst… type “title” ✎'],
     spotlight:['Now showing 🎬','Fresh off the press 🗞️','Meet the projects'],
     about:['Who’s this guy? 🤔','A little about Victor','The person behind the projects'],
     sparknews:['Stop the presses! 🗞️','Extra! Extra! SparkNews™','Read all about it'],
@@ -1427,11 +1487,12 @@ Contact: victor.stanovoy.mail@gmail.com</p>
     'Pocket Union™ · Excellence on the Go',
     'Connect. Reflect. Excel.',
     'Victor Stanovoy · Founder & CEO',
+    'Psst: type “title” on the page ✎',
     'Come back soon'
   ];
   var TICKER_SEP='   ✦   ', TICKER_WIDTH=34, TICKER_MS=300;
   var WELCOME='Welcome back! 👋';
-  var curId='top', typeTimer=null, tickTimer=null;
+  var curId='top', typeTimer=null, tickTimer=null, custom=null, introTitle=false;
   function pick(a){return a[Math.floor(Math.random()*a.length)];}
   function typeTitle(text){
     clearInterval(typeTimer);
@@ -1445,7 +1506,7 @@ Contact: victor.stanovoy.mail@gmail.com</p>
   }
   function setSection(id){
     curId=id; setActive(id);
-    if(document.hidden) return;
+    if(document.hidden||custom||introTitle) return;
     typeTitle(pick(TITLES[id]||[BASE]));
   }
   /* Browsers slow down and eventually pause ordinary timers in background tabs, which made the ticker crawl and stop.
@@ -1477,6 +1538,7 @@ Contact: victor.stanovoy.mail@gmail.com</p>
     }
   }
   document.addEventListener('visibilitychange',function(){
+    if(custom||introTitle) return;   /* a title you set yourself, or the opening, keeps going */
     clearInterval(typeTimer);
     if(document.hidden){
       startTicker();
@@ -1492,6 +1554,103 @@ Contact: victor.stanovoy.mail@gmail.com</p>
     },{rootMargin:'-45% 0px -50% 0px'});
     Object.keys(TITLES).forEach(function(id){ var s=document.getElementById(id); if(s) tio.observe(s); });
   }
+
+
+  /* ---- easter egg: the title studio. Type "title" anywhere, or triple-click the name in the top bar. ----
+     Name the tab whatever you like and pick an effect. It stays until you press "Back to auto".
+     EDIT HERE: change the text of an effect, add your own to FX, or change the first title with TS_START. */
+  var TS_START='Hello from the tab ✨';
+  var MOONS=['🌑','🌒','🌓','🌔','🌕','🌖','🌗','🌘'], GL='▒░#%@&$*?';
+  var FX={
+    type:{n:'Type',ms:90,frames:function(c){return c.length+1;},f:function(c,i){var k=Math.min(i+1,c.length);return c.slice(0,k).join('')+(k<c.length?'▍':'');}},
+    decode:{n:'Decode',ms:45,frames:function(c){return c.length*2+3;},f:function(c,i){var r=Math.floor(i/2);return c.map(function(ch,k){return (k<r||ch===' ')?ch:GL.charAt(Math.floor(Math.random()*GL.length));}).join('');}},
+    ticker:{n:'Ticker',ms:230,f:function(c,i){var t=Array.from(c.join('')+'   ✦   '),n=t.length,o='';for(var k=0;k<28;k++)o+=t[(i+k)%n];return o;}},
+    wave:{n:'Wave',ms:120,f:function(c,i){return c.map(function(ch,k){return (((k-i)%6)+6)%6<3?ch.toUpperCase():ch.toLowerCase();}).join('');}},
+    blink:{n:'Blink',ms:550,f:function(c,i){var t=c.join('');return i%2?'✦ '+t+' ✦':t;}},
+    orbit:{n:'Orbit',ms:170,f:function(c,i){return MOONS[i%8]+' '+c.join('');}},
+    scan:{n:'Scan',ms:130,f:function(c,i){var p=i%c.length;return c.map(function(ch,k){return k===p?'['+ch+']':ch;}).join('');}},
+    glitch:{n:'Glitch',ms:110,f:function(c,i){var hit=Math.random()<.3;return c.map(function(ch){return (hit&&ch!==' '&&Math.random()<.35)?GL.charAt(Math.floor(Math.random()*GL.length)):ch;}).join('');}},
+    progress:{n:'Loading',ms:300,frames:function(){return 8;},f:function(c,i){var p=Math.min(i,5);return '▰▰▰▰▰'.slice(0,p)+'▱▱▱▱▱'.slice(0,5-p)+' '+c.join('');}}
+  };
+  var FXKEYS=Object.keys(FX), fxWorker=null, fxTimer=null, tsFx='type', tsText='';
+  function stopFx(){
+    clearInterval(fxTimer); fxTimer=null;
+    if(fxWorker){try{fxWorker.postMessage('stop');fxWorker.terminate();}catch(e){} fxWorker=null;}
+  }
+  function runFx(key,text){
+    stopFx(); clearInterval(typeTimer);
+    var fx=FX[key]; if(!fx) return;
+    if(reduce){document.title=text;return;}
+    var c=Array.from(text), t0=Date.now(), last=-1, fr=fx.frames?fx.frames(c):0;
+    function step(){
+      var i=Math.floor((Date.now()-t0)/fx.ms);
+      if(fr&&i>=fr){document.title=text;stopFx();return;}
+      if(i===last) return; last=i;
+      document.title=fx.f(c,i);
+    }
+    step();
+    try{
+      var src='var t=0;onmessage=function(e){clearInterval(t);if(e.data!=="stop")t=setInterval(function(){postMessage(1)},e.data)}';
+      var url=URL.createObjectURL(new Blob([src],{type:'text/javascript'}));
+      fxWorker=new Worker(url); URL.revokeObjectURL(url);
+      fxWorker.onmessage=step; fxWorker.postMessage(Math.min(fx.ms,200));
+    }catch(e){ fxWorker=null; fxTimer=setInterval(step,Math.min(fx.ms,200)); }
+  }
+  var ts=$('#ts'), tsIn=$('#tsIn'), tsPrev=$('#tsPrev'), tsFxBox=$('#tsFx'), tsFrom=null;
+  function tsPaint(){
+    tsPrev.textContent=document.title||BASE;
+    $$('#tsFx button').forEach(function(b){b.setAttribute('aria-pressed',b.getAttribute('data-fx')===tsFx?'true':'false');});
+  }
+  function tsApply(key){
+    if(key) tsFx=key;
+    tsText=(tsIn.value||'').trim()||tsText||BASE;
+    tsIn.value=tsText===BASE&&!tsIn.value?'':tsIn.value;
+    custom={text:tsText,fx:tsFx};
+    runFx(tsFx,tsText); tsPaint();
+  }
+  FXKEYS.forEach(function(k){
+    var b=document.createElement('button'); b.type='button'; b.textContent=FX[k].n; b.setAttribute('data-fx',k); b.setAttribute('aria-pressed','false');
+    b.addEventListener('click',function(){tsApply(k);});
+    tsFxBox.appendChild(b);
+  });
+  $('#tsF').addEventListener('submit',function(e){e.preventDefault();tsApply();});
+  $('#tsRand').addEventListener('click',function(){
+    var k; do{k=FXKEYS[Math.floor(Math.random()*FXKEYS.length)];}while(k===tsFx&&FXKEYS.length>1);
+    tsApply(k);
+  });
+  $('#tsAuto').addEventListener('click',function(){
+    custom=null; stopFx(); tsText=''; tsIn.value='';
+    typeTitle(pick(TITLES[curId]||[BASE])); tsPaint();
+  });
+  function tsOpen(){
+    if(!ts.hidden){tsIn.focus();return;}
+    tsFrom=document.activeElement;
+    var ic=document.querySelector('link[rel~="icon"]'); if(ic) $('#tsFav').src=ic.href;
+    if(!tsIn.value) tsIn.value=custom?custom.text:TS_START;
+    ts.hidden=false; tsPaint(); tsIn.focus(); tsIn.select();
+    inkSay('You found the title studio ✎');
+  }
+  function tsClose(){
+    if(ts.hidden) return;
+    ts.hidden=true;
+    if(tsFrom&&tsFrom.focus&&document.contains(tsFrom)) tsFrom.focus();
+  }
+  $('#tsX').addEventListener('click',tsClose);
+  ts.addEventListener('keydown',function(e){ if(e.key==='Escape'){e.stopPropagation();tsClose();} });
+  var titleEl=document.querySelector('title');
+  if(titleEl&&window.MutationObserver) new MutationObserver(function(){ if(!ts.hidden) tsPrev.textContent=document.title; }).observe(titleEl,{childList:true,characterData:true,subtree:true});
+  var tsKeys='';
+  document.addEventListener('keydown',function(e){
+    var t=e.target; if(t&&(t.isContentEditable||/^(INPUT|TEXTAREA|SELECT)$/.test(t.tagName))) return;
+    if(e.key.length!==1||e.metaKey||e.ctrlKey||e.altKey) return;
+    tsKeys=(tsKeys+e.key.toLowerCase()).slice(-5);
+    if(tsKeys==='title'){tsKeys='';tsOpen();}
+  });
+  var markN=0, markT=0;
+  $('.mark').addEventListener('click',function(e){
+    var n=Date.now(); markN=(n-markT<700)?markN+1:1; markT=n;
+    if(markN>=3){markN=0;e.preventDefault();tsOpen();}
+  });
 
   /* ---- CV: shows up by itself when a file named cv.pdf (or resume.pdf) sits next to this page ---- */
   var CV_FILES=['cv.pdf','resume.pdf'];
@@ -1684,12 +1843,17 @@ Contact: victor.stanovoy.mail@gmail.com</p>
   var INTRO_ROWS=['VICTOR STANOVOY','FOUNDER & CEO','SPARKNEWS™','POCKET UNION™'];
   window.__introBoot=true;
   var introTpl=$('#intro')?$('#intro').cloneNode(true):null;   /* a clean copy, used by "Replay intro" */
+  /* the tab title changes with the board. EDIT HERE: one line per row, then the lines for the end. */
+  var INTRO_TITLES=['🛫 Now boarding…','✈ Passenger: VICTOR STANOVOY','🎫 Founder & CEO · Gate A','🗞️ SparkNews™ · Departing now','🎒 Pocket Union™ · Final call','Excellence on the Go ✈️'];
+  var INTRO_WELCOME='Welcome aboard ✈️';
+  function introSet(i){ if(!custom&&INTRO_TITLES[i]){ clearInterval(typeTimer); document.title=INTRO_TITLES[i]; } }
   function playOpening(el){
-    var locked=false, left=false, done=false, raf=0, hold=0;
+    var locked=false, left=false, done=false, raf=0, hold=0, ttl=[];
     function off(){ removeEventListener('keydown',leave); removeEventListener('wheel',leave); removeEventListener('touchstart',leave); }
     function finish(){
       if(done) return; done=true;
-      clearTimeout(hold); cancelAnimationFrame(raf); off();
+      clearTimeout(hold); cancelAnimationFrame(raf); off(); ttl.forEach(clearTimeout);
+      if(introTitle){ introTitle=false; if(!custom&&!document.hidden) typeTitle(pick(TITLES[curId]||[BASE])); }
       if(el.parentNode) el.parentNode.removeChild(el);
       root.classList.remove('intro-on'); root.classList.add('no-intro');
       if(locked){ lock(false); locked=false; }
@@ -1697,7 +1861,8 @@ Contact: victor.stanovoy.mail@gmail.com</p>
     }
     function leave(){
       if(left) return; left=true;
-      clearTimeout(hold); cancelAnimationFrame(raf); off();
+      clearTimeout(hold); cancelAnimationFrame(raf); off(); ttl.forEach(clearTimeout);
+      if(!custom) document.title=INTRO_WELCOME;
       el.classList.add('out');
       root.classList.remove('intro-on');          /* the hero letters start rising as the board lifts */
       setTimeout(finish,950);
@@ -1710,13 +1875,18 @@ Contact: victor.stanovoy.mail@gmail.com</p>
         var sp=document.createElement('span'); sp.className='fl'+(c===' '?' sp':'');
         if(c!==' '){
           var a=r*200+k*28+Math.random()*60;
-          tiles.push({el:sp,ch:c,a:a,b:a+380+Math.random()*380,last:0,done:false});
+          tiles.push({row:r,el:sp,ch:c,a:a,b:a+380+Math.random()*380,last:0,done:false});
         }
         row.appendChild(sp);
       });
       board.appendChild(row);
     });
     lock(true); locked=true;
+    introTitle=true; introSet(0);
+    INTRO_ROWS.forEach(function(txt,r){
+      var end=0; tiles.forEach(function(x){ if(x.row===r&&x.b>end) end=x.b; });
+      ttl.push(setTimeout(function(){introSet(r+1);},end));
+    });
     var t0=performance.now();
     function tick(now){
       var t=now-t0, pending=0;
@@ -1731,7 +1901,7 @@ Contact: victor.stanovoy.mail@gmail.com</p>
         x.el.textContent=x.ch; x.el.classList.remove('flip'); x.done=true;
       });
       if(pending){ raf=requestAnimationFrame(tick); }
-      else{ foot.classList.add('on'); hold=setTimeout(leave,650); }
+      else{ foot.classList.add('on'); introSet(INTRO_TITLES.length-1); hold=setTimeout(leave,650); }
     }
     raf=requestAnimationFrame(tick);
     /* any key, scroll or touch skips ahead. A short delay stops the key that started a replay from skipping it. */
@@ -1905,7 +2075,7 @@ Contact: victor.stanovoy.mail@gmail.com</p>
     var n=Date.now();
     if(n-lastTap<380){lastTap=0;setInk(!inkOn);} else lastTap=n;
   });
-  try{console.log('%cPsst… type “ink” anywhere on the page.','font:italic 16px Georgia,serif;color:#2F3DF2');}catch(e){}
+  try{console.log('%cPsst… type “ink” anywhere on the page. And “title”.','font:italic 16px Georgia,serif;color:#2F3DF2');}catch(e){}
 
   /* ---- boot ---- */
   size();measure();
