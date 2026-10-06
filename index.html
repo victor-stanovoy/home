@@ -12,12 +12,11 @@
    If no image is there, it draws a "VS" monogram instead (dark blue on light, soft blue on dark).
    RADIUS is the corner size as a fraction of the icon: 0 is square, 0.22 is soft, 0.5 is a circle. */
 (function(){
-  /* opening moment: the departure board plays once per visit, and never for people who asked for reduced motion.
+  /* opening moment: the departure board plays on every page load, and never for people who asked for reduced motion.
      Without JavaScript nothing is added, so the page is simply shown. If the main script never starts, a failsafe removes the board after 8 seconds. */
   try{
-    var de=document.documentElement, introSeen=false;
-    try{introSeen=!!sessionStorage.getItem('intro-seen');}catch(e){}
-    if(introSeen||matchMedia('(prefers-reduced-motion: reduce)').matches) de.classList.add('no-intro');
+    var de=document.documentElement;
+    if(matchMedia('(prefers-reduced-motion: reduce)').matches) de.classList.add('no-intro');
     else{
       de.classList.add('intro-on');
       setTimeout(function(){ if(!window.__introBoot){de.classList.remove('intro-on');de.classList.add('no-intro');} },8000);
@@ -531,6 +530,14 @@ html.intro-on .ci{animation-play-state:paused}
 
 .menu-foot-row{display:flex;justify-content:space-between;align-items:center;gap:1rem;flex-wrap:wrap;margin-top:2rem}
 
+/* easter egg: intro maker */
+.is-f{display:grid;gap:.5rem}
+.is-f label{display:grid;gap:.3rem;font:500 .68rem/1.3 var(--f-mono);text-transform:uppercase;letter-spacing:.1em;color:var(--muted)}
+.is-f input{padding:.6rem .75rem;border:1px solid var(--line);background:var(--bg);color:var(--ink);font:400 1rem/1.2 var(--f-body);border-radius:0;min-width:0}
+.is-f input:hover,.is-f input:focus{border-color:var(--ink)}
+.is-f .isr{font-family:var(--f-mono);text-transform:uppercase}
+.is-note{margin:0;font:400 .8rem/1.4 var(--f-body);color:var(--muted)}
+#is{max-height:calc(100vh - 2rem);overflow-y:auto}
 /* easter egg: title studio */
 .ts{
   position:fixed;left:var(--gutter);bottom:calc(env(safe-area-inset-bottom,0px) + 1rem);z-index:97;
@@ -815,7 +822,7 @@ html.has-cursor,html.has-cursor *{cursor:none!important}
 
 <div class="intro" id="intro" aria-hidden="true">
   <div class="intro-in">
-    <p class="intro-k">Now boarding</p>
+    <p class="intro-k" id="introK">Now boarding</p>
     <div class="intro-board" id="introBoard"></div>
     <p class="intro-foot" id="introFoot">Excellence on the Go</p>
   </div>
@@ -828,6 +835,21 @@ html.has-cursor,html.has-cursor *{cursor:none!important}
 <div class="tip" id="tip" aria-hidden="true"></div>
 <canvas class="ink-cv" id="inkCv" aria-hidden="true"></canvas>
 <div class="ink-banner" id="inkBanner" role="status"></div>
+<div class="ts" id="is" role="dialog" aria-label="Intro maker" hidden>
+  <div class="ts-h"><b>Make the intro yours</b><button class="ts-x" id="isX" type="button" aria-label="Close intro maker">×</button></div>
+  <form class="is-f" id="isF" autocomplete="off">
+    <label>Top line<input id="isK" type="text" maxlength="24" spellcheck="false"></label>
+    <label>Board rows (15 characters each, leave blank to skip)</label>
+    <input class="isr" type="text" maxlength="15" spellcheck="false" aria-label="Row 1">
+    <input class="isr" type="text" maxlength="15" spellcheck="false" aria-label="Row 2">
+    <input class="isr" type="text" maxlength="15" spellcheck="false" aria-label="Row 3">
+    <input class="isr" type="text" maxlength="15" spellcheck="false" aria-label="Row 4">
+    <input class="isr" type="text" maxlength="15" spellcheck="false" aria-label="Row 5">
+    <label>Line underneath<input id="isT" type="text" maxlength="40" spellcheck="false"></label>
+    <p class="is-note" id="isNote">Saved in this browser only, until you reset.</p>
+    <div class="ts-b"><button class="btn" id="isPlay" type="submit">Play</button><button class="btn" id="isSave" type="button">Save</button><button class="btn" id="isReset" type="button">Reset</button></div>
+  </form>
+</div>
 <div class="ts" id="ts" role="dialog" aria-label="Tab title studio" hidden>
   <div class="ts-h"><b>Title studio</b><button class="ts-x" id="tsX" type="button" aria-label="Close title studio">×</button></div>
   <div class="ts-tab" aria-hidden="true"><img id="tsFav" alt="" width="16" height="16"><span id="tsPrev"></span></div>
@@ -1624,6 +1646,7 @@ Contact: victor.stanovoy.mail@gmail.com</p>
   });
   function tsOpen(){
     if(!ts.hidden){tsIn.focus();return;}
+    var isEl=document.getElementById('is'); if(isEl) isEl.hidden=true;
     tsFrom=document.activeElement;
     var ic=document.querySelector('link[rel~="icon"]'); if(ic) $('#tsFav').src=ic.href;
     if(!tsIn.value) tsIn.value=custom?custom.text:TS_START;
@@ -1841,14 +1864,36 @@ Contact: victor.stanovoy.mail@gmail.com</p>
   /* EDIT HERE: the rows on the board. Capital letters work best. Keep each row to 15 characters or fewer.
      The line "Excellence on the Go" under the board is in the HTML (id introFoot). */
   var INTRO_ROWS=['VICTOR STANOVOY','FOUNDER & CEO','SPARKNEWS™','POCKET UNION™'];
+  var INTRO_TOP='Now boarding', INTRO_FOOT='Excellence on the Go';
+  /* visitors can make their own intro: type "board" on the page. It is saved in this browser (key intro-custom) until they reset. */
+  function introLoad(){
+    try{
+      var o=JSON.parse(localStorage.getItem('intro-custom')||'null');
+      if(o&&Array.isArray(o.rows)){
+        var rows=o.rows.map(function(r){return String(r).slice(0,15);}).filter(function(r){return r.trim();}).slice(0,5);
+        if(rows.length) return {custom:true,k:String(o.k||'').slice(0,24),rows:rows,foot:String(o.foot||'').slice(0,40)};
+      }
+    }catch(e){}
+    return {custom:false,k:INTRO_TOP,rows:INTRO_ROWS,foot:INTRO_FOOT};
+  }
+  var introCfg=introLoad();
   window.__introBoot=true;
   var introTpl=$('#intro')?$('#intro').cloneNode(true):null;   /* a clean copy, used by "Replay intro" */
   /* the tab title changes with the board. EDIT HERE: one line per row, then the lines for the end. */
   var INTRO_TITLES=['🛫 Now boarding…','✈ Passenger: VICTOR STANOVOY','🎫 Founder & CEO · Gate A','🗞️ SparkNews™ · Departing now','🎒 Pocket Union™ · Final call','Excellence on the Go ✈️'];
   var INTRO_WELCOME='Welcome aboard ✈️';
-  function introSet(i){ if(!custom&&INTRO_TITLES[i]){ clearInterval(typeTimer); document.title=INTRO_TITLES[i]; } }
+  function introTitles(){
+    if(!introCfg.custom) return INTRO_TITLES;
+    var t=['🛫 '+(introCfg.k||'Welcome')+'…'];
+    introCfg.rows.forEach(function(r){ t.push('✈ '+r); });
+    t.push(introCfg.foot||'Welcome ✈️');
+    return t;
+  }
+  var introT=INTRO_TITLES;
+  function introSet(i){ if(!custom&&introT[i]){ clearInterval(typeTimer); document.title=introT[i]; } }
   function playOpening(el){
-    var locked=false, left=false, done=false, raf=0, hold=0, ttl=[];
+    var locked=false, left=false, done=false, raf=0, hold=0, ttl=[], cfg=introCfg;
+    introT=introTitles();
     function off(){ removeEventListener('keydown',leave); removeEventListener('wheel',leave); removeEventListener('touchstart',leave); }
     function finish(){
       if(done) return; done=true;
@@ -1857,7 +1902,7 @@ Contact: victor.stanovoy.mail@gmail.com</p>
       if(el.parentNode) el.parentNode.removeChild(el);
       root.classList.remove('intro-on'); root.classList.add('no-intro');
       if(locked){ lock(false); locked=false; }
-      try{ sessionStorage.setItem('intro-seen','1'); }catch(e){}
+      introCfg=introLoad();
     }
     function leave(){
       if(left) return; left=true;
@@ -1869,7 +1914,8 @@ Contact: victor.stanovoy.mail@gmail.com</p>
     }
     if(reduce||document.hidden||!root.classList.contains('intro-on')){ finish(); return; }
     var board=$('#introBoard',el), foot=$('#introFoot',el), CH='ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789&', tiles=[];
-    INTRO_ROWS.forEach(function(txt,r){
+    $('#introK',el).textContent=cfg.k; foot.textContent=cfg.foot; foot.hidden=!cfg.foot;
+    cfg.rows.forEach(function(txt,r){
       var row=document.createElement('div'); row.className='fl-row';
       Array.from(txt).forEach(function(c,k){
         var sp=document.createElement('span'); sp.className='fl'+(c===' '?' sp':'');
@@ -1883,7 +1929,7 @@ Contact: victor.stanovoy.mail@gmail.com</p>
     });
     lock(true); locked=true;
     introTitle=true; introSet(0);
-    INTRO_ROWS.forEach(function(txt,r){
+    cfg.rows.forEach(function(txt,r){
       var end=0; tiles.forEach(function(x){ if(x.row===r&&x.b>end) end=x.b; });
       ttl.push(setTimeout(function(){introSet(r+1);},end));
     });
@@ -1901,7 +1947,7 @@ Contact: victor.stanovoy.mail@gmail.com</p>
         x.el.textContent=x.ch; x.el.classList.remove('flip'); x.done=true;
       });
       if(pending){ raf=requestAnimationFrame(tick); }
-      else{ foot.classList.add('on'); introSet(INTRO_TITLES.length-1); hold=setTimeout(leave,650); }
+      else{ foot.classList.add('on'); introSet(introT.length-1); hold=setTimeout(leave,650); }
     }
     raf=requestAnimationFrame(tick);
     /* any key, scroll or touch skips ahead. A short delay stops the key that started a replay from skipping it. */
@@ -1929,7 +1975,41 @@ Contact: victor.stanovoy.mail@gmail.com</p>
     var t=e.target; if(t&&(t.isContentEditable||/^(INPUT|TEXTAREA|SELECT)$/.test(t.tagName))) return;
     if(e.key.length!==1||e.metaKey||e.ctrlKey||e.altKey) return;
     introKeys=(introKeys+e.key.toLowerCase()).slice(-5);
-    if(introKeys==='intro'){introKeys='';replayIntro();}
+    if(introKeys==='intro'){introKeys='';replayIntro();inkSay('Psst… type “board” to make it your own');}
+  });
+  var isP=$('#is'), isK=$('#isK'), isT=$('#isT'), isRows=$$('#isF .isr'), isFrom=null, isNote=$('#isNote');
+  function isFill(c){ isK.value=c.k; isT.value=c.foot; isRows.forEach(function(i,n){i.value=c.rows[n]||'';}); }
+  function isRead(){
+    var rows=isRows.map(function(i){return i.value.toUpperCase().trim();}).filter(Boolean);
+    return {custom:true,k:isK.value.trim(),rows:rows.length?rows:INTRO_ROWS,foot:isT.value.trim()};
+  }
+  function isOpen(){
+    if(!isP.hidden){isK.focus();return;}
+    var tsEl=$('#ts'); if(tsEl) tsEl.hidden=true;
+    isFrom=document.activeElement; isFill(introLoad()); isNote.textContent='Saved in this browser only, until you reset.';
+    isP.hidden=false; isK.focus(); inkSay('You found the intro maker ✈️');
+  }
+  function isClose(){ if(isP.hidden) return; isP.hidden=true; if(isFrom&&isFrom.focus&&document.contains(isFrom)) isFrom.focus(); }
+  $('#isX').addEventListener('click',isClose);
+  isP.addEventListener('keydown',function(e){ if(e.key==='Escape'){e.stopPropagation();isClose();} });
+  $('#isF').addEventListener('submit',function(e){
+    e.preventDefault(); introCfg=isRead(); isP.hidden=true; replayIntro();
+  });
+  $('#isSave').addEventListener('click',function(){
+    var c=isRead();
+    try{ localStorage.setItem('intro-custom',JSON.stringify({k:c.k,rows:c.rows,foot:c.foot})); introCfg=introLoad(); isNote.textContent='Saved. It will play every time you open the page here.'; }
+    catch(e){ isNote.textContent='This browser would not let me save it.'; }
+  });
+  $('#isReset').addEventListener('click',function(){
+    try{ localStorage.removeItem('intro-custom'); }catch(e){}
+    introCfg=introLoad(); isFill(introCfg); isNote.textContent='Back to the original intro.';
+  });
+  var isKeys='';
+  document.addEventListener('keydown',function(e){
+    var t=e.target; if(t&&(t.isContentEditable||/^(INPUT|TEXTAREA|SELECT)$/.test(t.tagName))) return;
+    if(e.key.length!==1||e.metaKey||e.ctrlKey||e.altKey) return;
+    isKeys=(isKeys+e.key.toLowerCase()).slice(-5);
+    if(isKeys==='board'){isKeys='';isOpen();}
   });
 
   /* ---- theme toggle: light or dark, remembered on this device ---- */
@@ -2075,7 +2155,7 @@ Contact: victor.stanovoy.mail@gmail.com</p>
     var n=Date.now();
     if(n-lastTap<380){lastTap=0;setInk(!inkOn);} else lastTap=n;
   });
-  try{console.log('%cPsst… type “ink” anywhere on the page. And “title”.','font:italic 16px Georgia,serif;color:#2F3DF2');}catch(e){}
+  try{console.log('%cPsst… type “ink” anywhere on the page. And “title”. And “board”.','font:italic 16px Georgia,serif;color:#2F3DF2');}catch(e){}
 
   /* ---- boot ---- */
   size();measure();
